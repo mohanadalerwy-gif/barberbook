@@ -76,8 +76,8 @@ export default function ProfilePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20">
-        <header className="sticky top-0 z-40 bg-background border-b px-4 py-4">
+      <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+        <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
           <h1 className="text-xl font-bold">{t('profile')}</h1>
         </header>
         <main className="px-4 py-6 space-y-6">
@@ -100,8 +100,8 @@ export default function ProfilePage() {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-background pb-20">
-        <header className="sticky top-0 z-40 bg-background border-b px-4 py-4">
+      <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+        <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
           <h1 className="text-xl font-bold">{t('profile')}</h1>
         </header>
 
@@ -147,8 +147,8 @@ export default function ProfilePage() {
   const userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || t('user');
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 bg-background border-b px-4 py-4">
+    <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">{t('profile')}</h1>
           <Button 

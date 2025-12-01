@@ -172,16 +172,28 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    background-image: linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15)), url('@assets/light_background.png');
+    background-image: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('@assets/light_background.png');
     background-size: cover;
     background-attachment: fixed;
     background-position: center;
   }
 
+  /* Dark mode via prefers-color-scheme (automatic) */
   @media (prefers-color-scheme: dark) {
-    body {
-      background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), url('@assets/dark_background.png');
+    body:not(.light-mode) {
+      background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('@assets/dark_background.png');
     }
+  }
+
+  /* Dark mode via .dark class (manual toggle) */
+  .dark body,
+  body.dark {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('@assets/dark_background.png');
+  }
+
+  /* Ensure light mode when .dark class is removed */
+  :root:not(.dark) body {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('@assets/light_background.png');
   }
 }
 

@@ -120,8 +120,8 @@ export default function BarberProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20">
-        <header className="sticky top-0 z-40 bg-background border-b px-4 py-4">
+      <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+        <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate('/book')}>
               <ArrowLeft className="h-5 w-5" />
@@ -149,7 +149,7 @@ export default function BarberProfilePage() {
 
   if (!barber) {
     return (
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
         <div className="flex items-center justify-center h-full pt-20">
           <p className="text-muted-foreground">{t('barberNotFound')}</p>
         </div>
@@ -191,8 +191,8 @@ export default function BarberProfilePage() {
 
   if (step === 'success') {
     return (
-      <div className="min-h-screen bg-background pb-20">
-        <header className="sticky top-0 z-40 bg-background border-b px-4 py-4">
+      <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+        <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
           <h1 className="text-xl font-bold text-center">{t('appointmentBooked')}</h1>
         </header>
 
@@ -265,8 +265,8 @@ export default function BarberProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 bg-background border-b px-4 py-4">
+    <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center gap-3">
           <Button 
             variant="ghost" 

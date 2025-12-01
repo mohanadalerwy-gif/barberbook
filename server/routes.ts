@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertBookingSchema, insertBarberSchema, insertServiceSchema } from "@shared/schema";
+import { insertBookingSchema, insertBarberSchema, insertServiceSchema, insertWorkingHoursSchema } from "@shared/schema";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -201,6 +201,80 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error creating service:", error);
       res.status(500).json({ message: "Failed to create service" });
+    }
+  });
+
+  app.get('/api/barbers/:id/working-hours', async (req, res) => {
+    try {
+      const savedHours = await storage.getWorkingHours(req.params.id);
+      
+      const dayOrder = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const defaultHours = dayOrder.map(day => ({
+        day,
+        isWorking: !['Friday', 'Saturday'].includes(day),
+        startTime: '09:00',
+        endTime: '18:00',
+      }));
+
+      const mergedHours = defaultHours.map(defaultDay => {
+        const saved = savedHours.find(h => h.day === defaultDay.day);
+        return saved ? {
+          id: saved.id,
+          barberId: saved.barberId,
+          day: saved.day,
+          isWorking: saved.isWorking,
+          startTime: saved.startTime,
+          endTime: saved.endTime,
+        } : defaultDay;
+      });
+
+      res.json(mergedHours);
+    } catch (error) {
+      console.error("Error fetching working hours:", error);
+      res.status(500).json({ message: "Failed to fetch working hours" });
+    }
+  });
+
+  app.put('/api/barbers/:id/working-hours', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const barberId = req.params.id;
+      const barber = await storage.getBarber(barberId);
+
+      if (!barber || barber.userId !== userId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const { hours } = req.body;
+      if (!Array.isArray(hours) || hours.length === 0) {
+        return res.status(400).json({ message: "Invalid hours data" });
+      }
+
+      const validDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      
+      const hoursWithBarberId = hours.map((h: any) => {
+        if (!h.day || !validDays.includes(h.day)) {
+          throw new Error(`Invalid day: ${h.day}`);
+        }
+        if (!h.startTime || !h.endTime) {
+          throw new Error(`Missing time for ${h.day}`);
+        }
+        
+        return {
+          barberId,
+          day: h.day,
+          startTime: h.startTime,
+          endTime: h.endTime,
+          isWorking: h.isWorking ?? true,
+        };
+      });
+
+      const updated = await storage.setWorkingHours(barberId, hoursWithBarberId);
+      console.log(`Saved ${updated.length} working hours for barber ${barberId}`);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating working hours:", error);
+      res.status(500).json({ message: "Failed to update working hours" });
     }
   });
 

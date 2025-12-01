@@ -7,8 +7,22 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import BarberCard from '@/components/BarberCard';
 import BottomNav from '@/components/BottomNav';
-import { MapPin, Calendar, Navigation, Scissors } from 'lucide-react';
+import { MapPin, Calendar, Navigation, Scissors, Sparkles } from 'lucide-react';
 import type { Barber } from '@/lib/types';
+
+function DecorativeAccent() {
+  return (
+    <div className="flex justify-center py-2">
+      <div className="flex items-center gap-2 opacity-40">
+        <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50" />
+        <Sparkles className="h-4 w-4 text-primary" />
+        <Scissors className="h-5 w-5 text-primary rotate-45" />
+        <Sparkles className="h-4 w-4 text-primary" />
+        <div className="h-px w-8 bg-gradient-to-l from-transparent to-primary/50" />
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   const [, navigate] = useLocation();
@@ -49,8 +63,8 @@ export default function HomePage() {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 bg-background border-b px-4 py-4">
+    <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -64,6 +78,8 @@ export default function HomePage() {
           </div>
         </div>
       </header>
+
+      <DecorativeAccent />
 
       <main className="px-4 py-6 space-y-6">
         <div className="grid grid-cols-2 gap-3">
