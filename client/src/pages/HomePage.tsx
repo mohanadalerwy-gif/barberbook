@@ -5,6 +5,7 @@ import BarberCard from '@/components/BarberCard';
 import BottomNav from '@/components/BottomNav';
 import { MapPin, Calendar, Navigation } from 'lucide-react';
 import { getNearbyBarbers } from '@/lib/mock-data';
+import heroImage from '@assets/generated_images/barber_shop_hero_image.png';
 
 export default function HomePage() {
   const [, navigate] = useLocation();
@@ -20,8 +21,18 @@ export default function HomePage() {
         <h1 className="text-xl font-bold mt-1">Find Your Barber</h1>
       </header>
 
-      <main className="px-4 py-6 space-y-6">
-        <div className="grid grid-cols-2 gap-3">
+      <main className="space-y-6">
+        <div className="w-full h-48 overflow-hidden rounded-b-lg">
+          <img 
+            src={heroImage} 
+            alt="Barber Shop" 
+            className="w-full h-full object-cover"
+            data-testid="hero-image"
+          />
+        </div>
+
+        <div className="px-4 space-y-6">
+          <div className="grid grid-cols-2 gap-3">
           <Button 
             size="lg" 
             className="h-20 flex-col gap-2"
@@ -72,6 +83,7 @@ export default function HomePage() {
             </Card>
           )}
         </section>
+        </div>
       </main>
 
       <BottomNav />
