@@ -1,21 +1,33 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, decimal, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, decimal, timestamp, pgEnum, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const userRoleEnum = pgEnum('user_role', ['customer', 'barber']);
 export const bookingStatusEnum = pgEnum('booking_status', ['pending', 'confirmed', 'declined', 'completed', 'cancelled']);
 
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
   phone: text("phone"),
-  email: text("email"),
   role: userRoleEnum("role").notNull().default('customer'),
-  avatar: text("avatar"),
   authProvider: text("auth_provider"),
   authProviderId: text("auth_provider_id"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const barbers = pgTable("barbers", {
@@ -109,9 +121,12 @@ export const bookingsRelations = relations(bookings, ({ one }) => ({
   }),
 }));
 
+export type UpsertUser = typeof users.$inferInsert;
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
 
 export const insertBarberSchema = createInsertSchema(barbers).omit({

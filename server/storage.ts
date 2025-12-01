@@ -1,6 +1,6 @@
 import { 
   users, barbers, services, workingHours, bookings,
-  type User, type InsertUser,
+  type User, type InsertUser, type UpsertUser,
   type Barber, type InsertBarber,
   type Service, type InsertService,
   type WorkingHours, type InsertWorkingHours,
@@ -11,8 +11,10 @@ import { eq, and, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   getUserByAuthProvider(provider: string, providerId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, data: Partial<InsertUser>): Promise<User | undefined>;
 
   getBarber(id: string): Promise<Barber | undefined>;
@@ -45,6 +47,11 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
   async getUserByAuthProvider(provider: string, providerId: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(
       and(eq(users.authProvider, provider), eq(users.authProviderId, providerId))
@@ -57,8 +64,23 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
   async updateUser(id: string, data: Partial<InsertUser>): Promise<User | undefined> {
-    const [user] = await db.update(users).set(data).where(eq(users.id, id)).returning();
+    const [user] = await db.update(users).set({ ...data, updatedAt: new Date() }).where(eq(users.id, id)).returning();
     return user || undefined;
   }
 
@@ -77,11 +99,12 @@ export class DatabaseStorage implements IStorage {
       SELECT 
         b.*,
         u.id as user_id,
-        u.name as user_name,
-        u.phone as user_phone,
+        u.first_name as user_first_name,
+        u.last_name as user_last_name,
         u.email as user_email,
+        u.phone as user_phone,
         u.role as user_role,
-        u.avatar as user_avatar,
+        u.profile_image_url as user_profile_image_url,
         (
           6371 * acos(
             cos(radians(${lat})) * cos(radians(b.lat::float)) *
@@ -116,14 +139,16 @@ export class DatabaseStorage implements IStorage {
       createdAt: row.created_at,
       user: {
         id: row.user_id,
-        name: row.user_name,
-        phone: row.user_phone,
         email: row.user_email,
+        firstName: row.user_first_name,
+        lastName: row.user_last_name,
+        profileImageUrl: row.user_profile_image_url,
+        phone: row.user_phone,
         role: row.user_role,
-        avatar: row.user_avatar,
         authProvider: null,
         authProviderId: null,
         createdAt: null,
+        updatedAt: null,
       },
       distance: parseFloat(row.distance),
     }));
