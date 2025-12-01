@@ -11,6 +11,9 @@
   "trendingBarbers": "الحلاقون الشهيرون",
   "selectService": "اختر الخدمة",
   "selectTime": "اختر الوقت",
+  "selectDate": "اختر التاريخ",
+  "services": "الخدمات",
+  "continue": "استمر",
   "confirmBooking": "تأكيد الحجز",
   "bookingSummary": "ملخص الحجز",
   "bookingId": "معرف الحجز",
@@ -20,9 +23,11 @@
   "time": "الوقت",
   "duration": "المدة",
   "total": "الإجمالي",
+  "price": "السعر",
   "confirmAppointment": "سيقوم الحلاق بتأكيد موعدك قريباً.",
   "confirmBookingBtn": "تأكيد الحجز",
   "appointmentBooked": "تم حجز الموعد!",
+  "appointmentConfirmed": "تم تأكيد موعدك مع {{barberName}}.",
   "viewMyBookings": "عرض حجوزاتي",
   "backToHome": "العودة إلى الرئيسية",
   "myAppointments": "مواعيدي",
@@ -33,5 +38,8 @@
   "signOut": "تسجيل الخروج",
   "phone": "الهاتف",
   "apple": "أبل",
-  "google": "جوجل"
+  "google": "جوجل",
+  "barberNotFound": "الحلاق غير موجود",
+  "min": "دقيقة",
+  "km": "كم"
 }

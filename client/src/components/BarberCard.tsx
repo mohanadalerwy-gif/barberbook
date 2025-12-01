@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star, MapPin } from 'lucide-react';
@@ -9,6 +10,8 @@ interface BarberCardProps {
 }
 
 export default function BarberCard({ barber, onClick }: BarberCardProps) {
+  const { t } = useTranslation();
+  
   return (
     <Card 
       className="hover-elevate cursor-pointer" 
@@ -32,7 +35,7 @@ export default function BarberCard({ barber, onClick }: BarberCardProps) {
               </div>
               <div className="flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />
-                <span>{barber.distance} km</span>
+                <span>{barber.distance} {t('km')}</span>
               </div>
             </div>
             

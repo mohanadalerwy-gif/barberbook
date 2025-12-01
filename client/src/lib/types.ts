@@ -20,6 +20,8 @@ export interface Barber {
   address: string;
   bio: string;
   isApproved: boolean;
+  lat: number;
+  lng: number;
 }
 
 export interface Service {
