@@ -3,9 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import BarberCard from '@/components/BarberCard';
 import BottomNav from '@/components/BottomNav';
-import { MapPin, Calendar, Navigation } from 'lucide-react';
+import { MapPin, Calendar, Navigation, Scissors } from 'lucide-react';
 import { getNearbyBarbers } from '@/lib/mock-data';
-import heroImage from '@assets/generated_images/barber_shop_hero_image.png';
 
 export default function HomePage() {
   const [, navigate] = useLocation();
@@ -14,28 +13,25 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 bg-background border-b px-4 py-4">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <MapPin className="h-4 w-4" />
-          <span className="text-sm">Current Location</span>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span className="text-sm">Current Location</span>
+            </div>
+            <h1 className="text-xl font-bold mt-1">Find Your Barber</h1>
+          </div>
+          <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm">
+            <Scissors className="h-6 w-6 text-primary" />
+          </div>
         </div>
-        <h1 className="text-xl font-bold mt-1">Find Your Barber</h1>
       </header>
 
-      <main className="space-y-6">
-        <div className="w-full h-48 overflow-hidden rounded-b-lg">
-          <img 
-            src={heroImage} 
-            alt="Barber Shop" 
-            className="w-full h-full object-cover"
-            data-testid="hero-image"
-          />
-        </div>
-
-        <div className="px-4 space-y-6">
-          <div className="grid grid-cols-2 gap-3">
+      <main className="px-4 py-6 space-y-6">
+        <div className="grid grid-cols-2 gap-3">
           <Button 
             size="lg" 
-            className="h-20 flex-col gap-2"
+            className="h-20 flex-col gap-2 shadow-md hover-elevate"
             onClick={() => navigate('/book')}
             data-testid="button-book-appointment"
           >
@@ -45,7 +41,7 @@ export default function HomePage() {
           <Button 
             size="lg" 
             variant="outline"
-            className="h-20 flex-col gap-2"
+            className="h-20 flex-col gap-2 shadow-md hover-elevate"
             onClick={() => navigate('/nearby')}
             data-testid="button-nearby-barbers"
           >
@@ -54,10 +50,10 @@ export default function HomePage() {
           </Button>
         </div>
 
-        <section>
+        <section className="space-y-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Barbers Near You</h2>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground px-3 py-1 rounded-full bg-gradient-to-r from-primary/5 to-transparent">
               Within 5 km
             </span>
           </div>
@@ -65,15 +61,16 @@ export default function HomePage() {
           {nearbyBarbers.length > 0 ? (
             <div className="space-y-3">
               {nearbyBarbers.map((barber) => (
-                <BarberCard
-                  key={barber.id}
-                  barber={barber}
-                  onClick={() => navigate(`/barber/${barber.id}`)}
-                />
+                <div key={barber.id} className="shadow-sm hover-elevate rounded-lg transition-all">
+                  <BarberCard
+                    barber={barber}
+                    onClick={() => navigate(`/barber/${barber.id}`)}
+                  />
+                </div>
               ))}
             </div>
           ) : (
-            <Card>
+            <Card className="shadow-sm">
               <CardContent className="py-8 text-center">
                 <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">
@@ -83,7 +80,6 @@ export default function HomePage() {
             </Card>
           )}
         </section>
-        </div>
       </main>
 
       <BottomNav />
