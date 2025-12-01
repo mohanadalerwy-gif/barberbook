@@ -1,14 +1,23 @@
 import { useLocation } from 'wouter';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import BarberCard from '@/components/BarberCard';
 import BottomNav from '@/components/BottomNav';
-import { MapPin, Calendar, Navigation, Scissors } from 'lucide-react';
+import { MapPin, Calendar, Navigation, Scissors, Globe } from 'lucide-react';
 import { getNearbyBarbers } from '@/lib/mock-data';
 
 export default function HomePage() {
   const [, navigate] = useLocation();
+  const { t, i18n } = useTranslation();
   const nearbyBarbers = getNearbyBarbers(5);
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'ar' : 'en';
+    i18n.changeLanguage(newLang);
+    localStorage.setItem('language', newLang);
+    document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr';
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -17,12 +26,22 @@ export default function HomePage() {
           <div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-4 w-4" />
-              <span className="text-sm">Current Location</span>
+              <span className="text-sm">{t('currentLocation')}</span>
             </div>
-            <h1 className="text-xl font-bold mt-1">Find Your Barber</h1>
+            <h1 className="text-xl font-bold mt-1">{t('findYourBarber')}</h1>
           </div>
-          <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm">
-            <Scissors className="h-6 w-6 text-primary" />
+          <div className="flex gap-2">
+            <button
+              onClick={toggleLanguage}
+              className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm hover-elevate"
+              data-testid="button-language-toggle"
+              title={i18n.language === 'en' ? 'العربية' : 'English'}
+            >
+              <Globe className="h-5 w-5 text-primary" />
+            </button>
+            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm">
+              <Scissors className="h-5 w-5 text-primary" />
+            </div>
           </div>
         </div>
       </header>
@@ -36,7 +55,7 @@ export default function HomePage() {
             data-testid="button-book-appointment"
           >
             <Calendar className="h-6 w-6" />
-            <span>Book Appointment</span>
+            <span>{t('bookAppointment')}</span>
           </Button>
           <Button 
             size="lg" 
@@ -46,15 +65,15 @@ export default function HomePage() {
             data-testid="button-nearby-barbers"
           >
             <Navigation className="h-6 w-6" />
-            <span>Nearby Barbers</span>
+            <span>{t('nearbyBarbers')}</span>
           </Button>
         </div>
 
         <section className="space-y-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Barbers Near You</h2>
+            <h2 className="text-lg font-semibold">{t('barbersNearYou')}</h2>
             <span className="text-sm text-muted-foreground px-3 py-1 rounded-full bg-gradient-to-r from-primary/5 to-transparent">
-              Within 5 km
+              {t('within5km')}
             </span>
           </div>
 
@@ -74,7 +93,7 @@ export default function HomePage() {
               <CardContent className="py-8 text-center">
                 <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">
-                  No barbers found within 5 km
+                  {t('noBarbersFound')}
                 </p>
               </CardContent>
             </Card>
