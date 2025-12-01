@@ -1,19 +1,23 @@
 import { useState, useMemo } from 'react';
 import { useLocation, useParams } from 'wouter';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import BottomNav from '@/components/BottomNav';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Star, MapPin, Clock, Check, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Clock, Check, CheckCircle, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { mockBarbers, mockServices, generateTimeSlots } from '@/lib/mock-data';
 import { format, addDays, isSameDay } from 'date-fns';
+import { generateBookingId } from '@/lib/booking-utils';
+import { openMapsApp } from '@/lib/maps-utils';
 import type { Service } from '@/lib/types';
 
 export default function BarberProfilePage() {
   const [, navigate] = useLocation();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const params = useParams<{ id: string }>();
   const barber = mockBarbers.find(b => b.id === params.id);
@@ -23,6 +27,7 @@ export default function BarberProfilePage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [step, setStep] = useState<'service' | 'time' | 'confirm' | 'success'>('service');
+  const [bookingId, setBookingId] = useState<string>('');
 
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
@@ -42,7 +47,10 @@ export default function BarberProfilePage() {
   }
 
   const handleConfirm = () => {
+    const id = generateBookingId();
+    setBookingId(id);
     console.log('Booking confirmed:', {
+      bookingId: id,
       barber: barber.name,
       service: selectedService?.name,
       date: format(selectedDate, 'yyyy-MM-dd'),

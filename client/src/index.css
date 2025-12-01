@@ -172,6 +172,16 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15)), url('@assets/light_background.png');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), url('@assets/dark_background.png');
+    }
   }
 }
 

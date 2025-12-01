@@ -1,0 +1,61 @@
+I have two background images provided for the app. Please apply them as follows and also implement the updates below.
+
+FILES PROVIDED:
+- dark_background.png  (use this for dark mode)
+- light_background.png (use this for light mode)
+- decor.png            (small decorative icon to place near the top, not a full header)
+
+TASK:
+1) Background images:
+   - Use dark_background.png as the app background when the device or app is in dark mode.
+   - Use light_background.png as the app background when the device or app is in light mode.
+   - Implement this using standard techniques so backgrounds switch automatically:
+     - On web / PWA: use CSS media query `prefers-color-scheme` and ensure the correct image is applied.
+     - On mobile (iOS/Android): use device theme detection (or system theme setting) to choose the correct background at runtime.
+   - Make sure backgrounds are subtle and do NOT reduce readability of UI elements:
+     - Add a semi-transparent overlay if needed (e.g., black 30% overlay on light image, white 15% overlay on dark image) to keep text/buttons readable.
+     - Do NOT let the background interfere with lists, cards, or buttons.
+
+2) Decorative image on Home screen:
+   - Use decor.png placed near the top center (small and minimal), not as a full header banner.
+   - Keep spacing and padding so it doesn't push content down.
+   - The decor should be a visual accent only — do not change layout or functionality.
+
+3) Language detection:
+   - Detect device language and automatically load UI strings in Arabic or English.
+   - If device language is Arabic → load Arabic UI (RTL layout where relevant).
+   - If device language is English → load English UI (LTR).
+   - Ensure all labels, buttons, validation messages, and the booking confirmation support both languages.
+   - No manual language toggle is required (automatic only). If device language is unsupported, fall back to English.
+
+4) Booking confirmation number:
+   - After a user confirms a booking, generate a unique booking ID in this format: `BARB-YYYY-XXXXXX` (e.g., BARB-2025-000123).
+   - Display the booking ID prominently on the confirmation screen and in the booking details page.
+   - Save the booking ID in the backend database with the booking record.
+   - Make booking ID available in barber dashboard, customer profile, and admin view.
+
+5) Location shortcut:
+   - Add a button labeled: “Open Location” (Arabic: "افتح الموقع") on the barber's profile/booking details.
+   - Button should open the barber location in any available maps app using universal linking:
+     - Use `geo:` URIs when possible and fallback to `https://maps.google.com/?q={lat},{lng}`.
+     - On iOS prefer Apple Maps link when available; open Google Maps if user has it installed; otherwise fallback to web link.
+   - The button must work both on mobile (open maps app) and web (open Google Maps in new tab).
+
+6) Keep logic & layout minimal:
+   - Do NOT modify existing business logic unless absolutely required.
+   - Maintain the minimalistic UI style: clear spacing, simple colors, readable typography.
+   - Ensure backgrounds and decor do not create visual noise.
+
+7) Implementation notes (deliverables):
+   - Update or add CSS/stylesheet and mobile theme-detection code to switch backgrounds automatically.
+   - Provide snippets for:
+     - Frontend: where to import/use the three images and overlay logic (CSS + pseudo-code for mobile frameworks).
+     - Backend: booking ID generation logic and database schema change to store booking_id.
+     - API change: include booking_id in booking creation response and booking retrieval endpoints.
+     - Location button: sample link generation and open intent code for iOS/Android/web.
+   - Test cases: ensure readability (contrast) on multiple screen sizes and both themes.
+   - If any asset names differ, please use the closest filenames available and inform me which filenames were used.
+
+IMPORTANT:
+- Use the exact provided files for backgrounds and `decor.png` for the decorative icon.
+- Keep all changes minimal, reversible, and well-documented in a single summary file (README) describing where changes were made.

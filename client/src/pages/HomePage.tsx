@@ -1,10 +1,11 @@
+import { useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import BarberCard from '@/components/BarberCard';
 import BottomNav from '@/components/BottomNav';
-import { MapPin, Calendar, Navigation, Scissors, Globe } from 'lucide-react';
+import { MapPin, Calendar, Navigation, Scissors } from 'lucide-react';
 import { getNearbyBarbers } from '@/lib/mock-data';
 
 export default function HomePage() {
@@ -12,12 +13,9 @@ export default function HomePage() {
   const { t, i18n } = useTranslation();
   const nearbyBarbers = getNearbyBarbers(5);
 
-  const toggleLanguage = () => {
-    const newLang = i18n.language === 'en' ? 'ar' : 'en';
-    i18n.changeLanguage(newLang);
-    localStorage.setItem('language', newLang);
-    document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr';
-  };
+  useEffect(() => {
+    document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+  }, [i18n.language]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -30,18 +28,8 @@ export default function HomePage() {
             </div>
             <h1 className="text-xl font-bold mt-1">{t('findYourBarber')}</h1>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={toggleLanguage}
-              className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm hover-elevate"
-              data-testid="button-language-toggle"
-              title={i18n.language === 'en' ? 'العربية' : 'English'}
-            >
-              <Globe className="h-5 w-5 text-primary" />
-            </button>
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm">
-              <Scissors className="h-5 w-5 text-primary" />
-            </div>
+          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm">
+            <Scissors className="h-5 w-5 text-primary" />
           </div>
         </div>
       </header>

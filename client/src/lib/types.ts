@@ -38,6 +38,7 @@ export interface TimeSlot {
 
 export interface Booking {
   id: string;
+  bookingId: string;
   customerId: string;
   customerName: string;
   customerPhone?: string;
