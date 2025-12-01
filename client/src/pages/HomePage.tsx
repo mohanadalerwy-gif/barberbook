@@ -1,21 +1,52 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import BarberCard from '@/components/BarberCard';
 import BottomNav from '@/components/BottomNav';
 import { MapPin, Calendar, Navigation, Scissors } from 'lucide-react';
-import { getNearbyBarbers } from '@/lib/mock-data';
+import type { Barber } from '@/lib/types';
 
 export default function HomePage() {
   const [, navigate] = useLocation();
   const { t, i18n } = useTranslation();
-  const nearbyBarbers = getNearbyBarbers(5);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
   }, [i18n.language]);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        () => {
+          setLocation({ lat: 25.2048, lng: 55.2708 });
+        }
+      );
+    } else {
+      setLocation({ lat: 25.2048, lng: 55.2708 });
+    }
+  }, []);
+
+  const { data: nearbyBarbers = [], isLoading } = useQuery<Barber[]>({
+    queryKey: ['/api/barbers/nearby', location?.lat, location?.lng],
+    queryFn: async () => {
+      if (!location) return [];
+      const res = await fetch(`/api/barbers/nearby?lat=${location.lat}&lng=${location.lng}&radius=5`);
+      if (!res.ok) throw new Error('Failed to fetch barbers');
+      return res.json();
+    },
+    enabled: !!location,
+  });
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -65,7 +96,24 @@ export default function HomePage() {
             </span>
           </div>
 
-          {nearbyBarbers.length > 0 ? (
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Card key={i}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-16 w-16 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : nearbyBarbers.length > 0 ? (
             <div className="space-y-3">
               {nearbyBarbers.map((barber) => (
                 <div key={barber.id} className="shadow-sm hover-elevate rounded-lg transition-all">

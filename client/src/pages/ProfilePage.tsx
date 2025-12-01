@@ -1,57 +1,108 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useLocation, useSearch } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import BottomNav from '@/components/BottomNav';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   User as UserIcon, 
-  Phone, 
   Calendar, 
   Settings, 
   Clock,
   CheckCircle,
+  Scissors,
 } from 'lucide-react';
-import { SiApple, SiGoogle } from 'react-icons/si';
-import { mockBookings } from '@/lib/mock-data';
-import type { User, Booking } from '@/lib/types';
 import { format, parseISO, isPast } from 'date-fns';
 
-interface ProfilePageProps {
-  user: User | null;
-  onLogin: (method: 'phone' | 'apple' | 'google') => void;
-  onLogout: () => void;
+interface Booking {
+  id: string;
+  bookingId: string;
+  barberId: string;
+  barberName: string;
+  serviceId: string;
+  serviceName: string;
+  date: string;
+  time: string;
+  status: 'pending' | 'confirmed' | 'declined' | 'completed' | 'cancelled';
+  duration: number;
+  price: number;
 }
 
-export default function ProfilePage({ user, onLogin, onLogout }: ProfilePageProps) {
+export default function ProfilePage() {
   const [, navigate] = useLocation();
   const searchString = useSearch();
   const { toast } = useToast();
+  const { t, i18n } = useTranslation();
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
+
+  const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({
+    queryKey: ['/api/bookings'],
+    enabled: isAuthenticated,
+  });
+
+  useEffect(() => {
+    document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+  }, [i18n.language]);
 
   useEffect(() => {
     if (searchString.includes('booked=true')) {
       toast({
-        title: 'Booking Confirmed!',
-        description: 'Your appointment has been booked successfully.',
+        title: t('bookingConfirmed'),
+        description: t('appointmentBookedSuccess'),
       });
     }
-  }, [searchString, toast]);
+  }, [searchString, toast, t]);
 
-  const upcomingBookings = mockBookings.filter(
+  const handleLogin = () => {
+    window.location.href = '/api/login';
+  };
+
+  const handleLogout = () => {
+    window.location.href = '/api/logout';
+  };
+
+  const upcomingBookings = bookings.filter(
     b => !isPast(parseISO(b.date)) && (b.status === 'pending' || b.status === 'confirmed')
   );
-  const pastBookings = mockBookings.filter(
+  const pastBookings = bookings.filter(
     b => isPast(parseISO(b.date)) || b.status === 'completed'
   );
 
-  if (!user) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background pb-20">
         <header className="sticky top-0 z-40 bg-background border-b px-4 py-4">
-          <h1 className="text-xl font-bold">Profile</h1>
+          <h1 className="text-xl font-bold">{t('profile')}</h1>
+        </header>
+        <main className="px-4 py-6 space-y-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-16 w-16 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <header className="sticky top-0 z-40 bg-background border-b px-4 py-4">
+          <h1 className="text-xl font-bold">{t('profile')}</h1>
         </header>
 
         <main className="px-4 py-6 space-y-6">
@@ -59,38 +110,19 @@ export default function ProfilePage({ user, onLogin, onLogout }: ProfilePageProp
             <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
               <UserIcon className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-semibold mb-2">Sign in to continue</h2>
+            <h2 className="text-lg font-semibold mb-2">{t('signInToContinue')}</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              View your appointments and manage your profile
+              {t('viewAppointments')}
             </p>
           </div>
 
           <div className="space-y-3">
             <Button 
               className="w-full h-12" 
-              variant="outline"
-              onClick={() => onLogin('phone')}
-              data-testid="button-login-phone"
+              onClick={handleLogin}
+              data-testid="button-login"
             >
-              <Phone className="h-5 w-5 mr-3" />
-              Continue with Phone
-            </Button>
-            <Button 
-              className="w-full h-12 bg-black hover:bg-black/90 text-white" 
-              onClick={() => onLogin('apple')}
-              data-testid="button-login-apple"
-            >
-              <SiApple className="h-5 w-5 mr-3" />
-              Continue with Apple
-            </Button>
-            <Button 
-              className="w-full h-12" 
-              variant="outline"
-              onClick={() => onLogin('google')}
-              data-testid="button-login-google"
-            >
-              <SiGoogle className="h-5 w-5 mr-3" />
-              Continue with Google
+              {t('signIn')}
             </Button>
           </div>
 
@@ -102,7 +134,7 @@ export default function ProfilePage({ user, onLogin, onLogout }: ProfilePageProp
               data-testid="link-settings"
             >
               <Settings className="h-4 w-4 mr-2" />
-              Settings
+              {t('settings')}
             </Button>
           </div>
         </main>
@@ -112,11 +144,13 @@ export default function ProfilePage({ user, onLogin, onLogout }: ProfilePageProp
     );
   }
 
+  const userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || t('user');
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 bg-background border-b px-4 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">Profile</h1>
+          <h1 className="text-xl font-bold">{t('profile')}</h1>
           <Button 
             variant="ghost" 
             size="icon"
@@ -133,23 +167,58 @@ export default function ProfilePage({ user, onLogin, onLogout }: ProfilePageProp
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                <AvatarImage src={user.profileImageUrl || ''} alt={userName} />
+                <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
               </Avatar>
-              <div>
-                <h2 className="font-semibold text-lg">{user.name}</h2>
+              <div className="flex-1">
+                <h2 className="font-semibold text-lg">{userName}</h2>
                 <p className="text-sm text-muted-foreground">{user.phone || user.email}</p>
+                {user.role === 'barber' && (
+                  <Badge variant="secondary" className="mt-1">
+                    <Scissors className="h-3 w-3 mr-1" />
+                    {t('barber')}
+                  </Badge>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
 
+        {user.role === 'barber' && (
+          <Button 
+            className="w-full"
+            onClick={() => navigate('/barber-dashboard')}
+            data-testid="button-barber-dashboard"
+          >
+            <Scissors className="h-4 w-4 mr-2" />
+            {t('barberDashboard')}
+          </Button>
+        )}
+
+        {user.role === 'customer' && (
+          <Button 
+            variant="outline"
+            className="w-full"
+            onClick={() => navigate('/barber-register')}
+            data-testid="button-become-barber"
+          >
+            <Scissors className="h-4 w-4 mr-2" />
+            {t('becomeBarber')}
+          </Button>
+        )}
+
         <section>
           <h3 className="font-semibold mb-3 flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Upcoming Appointments
+            {t('upcomingAppointments')}
           </h3>
-          {upcomingBookings.length > 0 ? (
+          {bookingsLoading ? (
+            <Card>
+              <CardContent className="py-6">
+                <Skeleton className="h-16 w-full" />
+              </CardContent>
+            </Card>
+          ) : upcomingBookings.length > 0 ? (
             <div className="space-y-3">
               {upcomingBookings.map((booking) => (
                 <BookingCard key={booking.id} booking={booking} />
@@ -158,7 +227,7 @@ export default function ProfilePage({ user, onLogin, onLogout }: ProfilePageProp
           ) : (
             <Card>
               <CardContent className="py-6 text-center text-muted-foreground">
-                No upcoming appointments
+                {t('noUpcoming')}
               </CardContent>
             </Card>
           )}
@@ -167,9 +236,15 @@ export default function ProfilePage({ user, onLogin, onLogout }: ProfilePageProp
         <section>
           <h3 className="font-semibold mb-3 flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            Past Appointments
+            {t('pastAppointments')}
           </h3>
-          {pastBookings.length > 0 ? (
+          {bookingsLoading ? (
+            <Card>
+              <CardContent className="py-6">
+                <Skeleton className="h-16 w-full" />
+              </CardContent>
+            </Card>
+          ) : pastBookings.length > 0 ? (
             <div className="space-y-3">
               {pastBookings.map((booking) => (
                 <BookingCard key={booking.id} booking={booking} isPast />
@@ -178,7 +253,7 @@ export default function ProfilePage({ user, onLogin, onLogout }: ProfilePageProp
           ) : (
             <Card>
               <CardContent className="py-6 text-center text-muted-foreground">
-                No past appointments
+                {t('noPast')}
               </CardContent>
             </Card>
           )}
@@ -187,10 +262,10 @@ export default function ProfilePage({ user, onLogin, onLogout }: ProfilePageProp
         <Button 
           variant="outline" 
           className="w-full"
-          onClick={onLogout}
+          onClick={handleLogout}
           data-testid="button-logout"
         >
-          Sign Out
+          {t('signOut')}
         </Button>
       </main>
 
@@ -200,15 +275,17 @@ export default function ProfilePage({ user, onLogin, onLogout }: ProfilePageProp
 }
 
 function BookingCard({ booking, isPast }: { booking: Booking; isPast?: boolean }) {
+  const { t } = useTranslation();
+  
   return (
     <Card className={isPast ? "opacity-70" : ""}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-medium">{booking.serviceName}</p>
-            <p className="text-sm text-muted-foreground">with {booking.barberName}</p>
+            <p className="text-sm text-muted-foreground">{t('with')} {booking.barberName}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              {format(parseISO(booking.date), 'EEE, MMM d')} at {booking.time}
+              {format(parseISO(booking.date), 'EEE, MMM d')} {t('at')} {booking.time}
             </p>
           </div>
           <div className="text-right">
@@ -223,7 +300,7 @@ function BookingCard({ booking, isPast }: { booking: Booking; isPast?: boolean }
               }
             >
               {booking.status === 'confirmed' && <CheckCircle className="h-3 w-3 mr-1" />}
-              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+              {t(booking.status)}
             </Badge>
             <p className="text-sm font-medium mt-2">${booking.price}</p>
           </div>

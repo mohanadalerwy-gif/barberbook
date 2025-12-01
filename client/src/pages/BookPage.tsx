@@ -1,14 +1,52 @@
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import BarberCard from '@/components/BarberCard';
 import BottomNav from '@/components/BottomNav';
-import { ArrowLeft, Scissors, Clock, Star } from 'lucide-react';
-import { getNearbyBarbers } from '@/lib/mock-data';
+import { ArrowLeft, Scissors, Clock, Star, MapPin } from 'lucide-react';
+import type { Barber } from '@/lib/types';
 
 export default function BookPage() {
   const [, navigate] = useLocation();
-  const barbers = getNearbyBarbers(5);
+  const { t, i18n } = useTranslation();
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+  }, [i18n.language]);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        () => {
+          setUserLocation({ lat: 25.2048, lng: 55.2708 });
+        }
+      );
+    } else {
+      setUserLocation({ lat: 25.2048, lng: 55.2708 });
+    }
+  }, []);
+
+  const { data: barbers = [], isLoading } = useQuery<Barber[]>({
+    queryKey: ['/api/barbers/nearby', userLocation?.lat, userLocation?.lng],
+    queryFn: async () => {
+      if (!userLocation) return [];
+      const res = await fetch(`/api/barbers/nearby?lat=${userLocation.lat}&lng=${userLocation.lng}&radius=5`);
+      if (!res.ok) throw new Error('Failed to fetch barbers');
+      return res.json();
+    },
+    enabled: !!userLocation,
+  });
 
   const popularServices = [
     { name: 'Haircut', icon: Scissors, duration: '30 min' },
@@ -28,19 +66,19 @@ export default function BookPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">Book Appointment</h1>
+          <h1 className="text-xl font-bold">{t('bookAppointment')}</h1>
         </div>
       </header>
 
       <main className="px-4 py-6 space-y-6">
         <section>
-          <h2 className="font-semibold mb-3">Quick Book</h2>
+          <h2 className="font-semibold mb-3">{t('quickBook')}</h2>
           <div className="grid grid-cols-3 gap-3">
             {popularServices.map((service) => (
               <Card 
                 key={service.name}
                 className="cursor-pointer hover-elevate"
-                onClick={() => navigate(`/barber/1`)}
+                onClick={() => barbers.length > 0 && navigate(`/barber/${barbers[0].id}`)}
               >
                 <CardContent className="p-3 text-center">
                   <service.icon className="h-6 w-6 mx-auto mb-2 text-primary" />
@@ -56,19 +94,47 @@ export default function BookPage() {
         </section>
 
         <section>
-          <h2 className="font-semibold mb-3">Available Barbers</h2>
+          <h2 className="font-semibold mb-3">{t('availableBarbers')}</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            Select a barber to view their services and book
+            {t('selectBarberToBook')}
           </p>
-          <div className="space-y-3">
-            {barbers.map((barber) => (
-              <BarberCard
-                key={barber.id}
-                barber={barber}
-                onClick={() => navigate(`/barber/${barber.id}`)}
-              />
-            ))}
-          </div>
+          
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Card key={i}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-16 w-16 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : barbers.length > 0 ? (
+            <div className="space-y-3">
+              {barbers.map((barber) => (
+                <BarberCard
+                  key={barber.id}
+                  barber={barber}
+                  onClick={() => navigate(`/barber/${barber.id}`)}
+                />
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">
+                  {t('noBarbersFound')}
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </section>
       </main>
 

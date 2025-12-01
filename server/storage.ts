@@ -96,32 +96,39 @@ export class DatabaseStorage implements IStorage {
 
   async getNearbyBarbers(lat: number, lng: number, radiusKm: number): Promise<(Barber & { user: User; distance: number })[]> {
     const result = await db.execute(sql`
-      SELECT 
-        b.*,
-        u.id as user_id,
-        u.first_name as user_first_name,
-        u.last_name as user_last_name,
-        u.email as user_email,
-        u.phone as user_phone,
-        u.role as user_role,
-        u.profile_image_url as user_profile_image_url,
-        (
-          6371 * acos(
-            cos(radians(${lat})) * cos(radians(b.lat::float)) *
-            cos(radians(b.lng::float) - radians(${lng})) +
-            sin(radians(${lat})) * sin(radians(b.lat::float))
-          )
-        ) AS distance
-      FROM barbers b
-      JOIN users u ON b.user_id = u.id
-      WHERE b.is_approved = true
-      HAVING (
-        6371 * acos(
-          cos(radians(${lat})) * cos(radians(b.lat::float)) *
-          cos(radians(b.lng::float) - radians(${lng})) +
-          sin(radians(${lat})) * sin(radians(b.lat::float))
-        )
-      ) <= ${radiusKm}
+      SELECT * FROM (
+        SELECT 
+          b.id,
+          b.user_id,
+          b.bio,
+          b.address,
+          b.lat,
+          b.lng,
+          b.price_range,
+          b.is_approved,
+          b.rating,
+          b.review_count,
+          b.created_at,
+          u.first_name as user_first_name,
+          u.last_name as user_last_name,
+          u.email as user_email,
+          u.phone as user_phone,
+          u.role as user_role,
+          u.profile_image_url as user_profile_image_url,
+          (
+            6371 * acos(
+              LEAST(1.0, GREATEST(-1.0,
+                cos(radians(${lat})) * cos(radians(CAST(b.lat AS float))) *
+                cos(radians(CAST(b.lng AS float)) - radians(${lng})) +
+                sin(radians(${lat})) * sin(radians(CAST(b.lat AS float)))
+              ))
+            )
+          ) AS distance
+        FROM barbers b
+        JOIN users u ON b.user_id = u.id
+        WHERE b.is_approved = true
+      ) AS nearby
+      WHERE distance <= ${radiusKm}
       ORDER BY distance
     `);
     

@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useForm } from 'react-hook-form';
+import { useMutation } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,42 +19,91 @@ import {
 } from '@/components/ui/form';
 import BottomNav from '@/components/BottomNav';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, Scissors, CheckCircle } from 'lucide-react';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { isUnauthorizedError } from '@/lib/authUtils';
 
 const formSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  phone: z.string().min(10, 'Please enter a valid phone number'),
-  email: z.string().email('Please enter a valid email'),
   address: z.string().min(5, 'Please enter your work address'),
-  experience: z.string().optional(),
+  bio: z.string().optional(),
+  lat: z.string().optional(),
+  lng: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
 export default function BarberRegisterPage() {
   const [, navigate] = useLocation();
+  const { t, i18n } = useTranslation();
   const { toast } = useToast();
+  const { isAuthenticated, isLoading } = useAuth();
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+  }, [i18n.language]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      phone: '',
-      email: '',
       address: '',
-      experience: '',
+      bio: '',
+      lat: '',
+      lng: '',
+    },
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: async (data: FormData) => {
+      return await apiRequest('POST', '/api/barbers/register', {
+        address: data.address,
+        bio: data.bio,
+        lat: data.lat || '25.2048',
+        lng: data.lng || '55.2708',
+        priceRange: '$20 - $50',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      setSubmitted(true);
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Sign in required",
+          description: "Please sign in to register as a barber.",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Registration Failed",
+        description: "Failed to register. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
   const onSubmit = (data: FormData) => {
-    console.log('Barber registration:', data);
-    setSubmitted(true);
-    toast({
-      title: 'Registration Submitted',
-      description: 'We will review your application and contact you soon.',
-    });
+    registerMutation.mutate(data);
   };
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to register as a barber.",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+    }
+  }, [isLoading, isAuthenticated, toast]);
 
   if (submitted) {
     return (
@@ -62,12 +113,12 @@ export default function BarberRegisterPage() {
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/profile')}
               data-testid="button-back"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-xl font-bold">Barber Registration</h1>
+            <h1 className="text-xl font-bold">{t('barberRegistration')}</h1>
           </div>
         </header>
 
@@ -75,12 +126,12 @@ export default function BarberRegisterPage() {
           <div className="h-20 w-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
           </div>
-          <h2 className="text-xl font-semibold mb-2">Application Submitted!</h2>
+          <h2 className="text-xl font-semibold mb-2">{t('applicationSubmitted')}</h2>
           <p className="text-muted-foreground mb-6">
-            Thank you for registering. We will review your application and contact you within 24-48 hours.
+            {t('registrationSuccess')}
           </p>
-          <Button onClick={() => navigate('/')} data-testid="button-go-home">
-            Back to Home
+          <Button onClick={() => navigate('/profile')} data-testid="button-go-home">
+            {t('viewProfile')}
           </Button>
         </main>
 
@@ -96,12 +147,12 @@ export default function BarberRegisterPage() {
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => navigate('/settings')}
+            onClick={() => navigate('/profile')}
             data-testid="button-back"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">Barber Registration</h1>
+          <h1 className="text-xl font-bold">{t('barberRegistration')}</h1>
         </div>
       </header>
 
@@ -112,9 +163,9 @@ export default function BarberRegisterPage() {
               <Scissors className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="font-medium">Join Our Platform</p>
+              <p className="font-medium">{t('joinPlatform')}</p>
               <p className="text-sm text-muted-foreground">
-                Register as a barber and start receiving bookings
+                {t('registerAsBarber')}
               </p>
             </div>
           </CardContent>
@@ -124,69 +175,13 @@ export default function BarberRegisterPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Enter your full name" 
-                      {...field} 
-                      data-testid="input-name"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="tel"
-                      placeholder="+1 (555) 000-0000" 
-                      {...field} 
-                      data-testid="input-phone"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="email"
-                      placeholder="your@email.com" 
-                      {...field} 
-                      data-testid="input-email"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Shop/Work Address</FormLabel>
+                  <FormLabel>{t('shopAddress')}</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Enter your work address" 
+                      placeholder={t('enterWorkAddress')}
                       {...field} 
                       data-testid="input-address"
                     />
@@ -198,16 +193,16 @@ export default function BarberRegisterPage() {
 
             <FormField
               control={form.control}
-              name="experience"
+              name="bio"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Experience & Services</FormLabel>
+                  <FormLabel>{t('experienceServices')}</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Tell us about your experience and the services you offer..."
+                      placeholder={t('tellAboutExperience')}
                       rows={4}
                       {...field} 
-                      data-testid="input-experience"
+                      data-testid="input-bio"
                     />
                   </FormControl>
                   <FormMessage />
@@ -218,10 +213,10 @@ export default function BarberRegisterPage() {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={form.formState.isSubmitting}
+              disabled={registerMutation.isPending}
               data-testid="button-submit"
             >
-              {form.formState.isSubmitting ? 'Submitting...' : 'Submit Registration'}
+              {registerMutation.isPending ? t('loading') : t('submitRegistration')}
             </Button>
           </form>
         </Form>

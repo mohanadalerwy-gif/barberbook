@@ -1,46 +1,156 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLocation, useParams } from 'wouter';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import BottomNav from '@/components/BottomNav';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, Star, MapPin, Clock, Check, CheckCircle, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { mockBarbers, mockServices, generateTimeSlots } from '@/lib/mock-data';
 import { format, addDays, isSameDay } from 'date-fns';
 import { generateBookingId } from '@/lib/booking-utils';
 import { openMapsApp } from '@/lib/maps-utils';
-import type { Service } from '@/lib/types';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { isUnauthorizedError } from '@/lib/authUtils';
+import type { Service as ServiceType } from '@/lib/types';
+
+interface BarberData {
+  id: string;
+  name: string;
+  avatar: string;
+  rating: number;
+  reviewCount: number;
+  priceRange: string;
+  address: string;
+  bio: string;
+  isApproved: boolean;
+  lat: number;
+  lng: number;
+  services: ServiceType[];
+  workingHours: any[];
+}
 
 export default function BarberProfilePage() {
   const [, navigate] = useLocation();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const params = useParams<{ id: string }>();
-  const barber = mockBarbers.find(b => b.id === params.id);
-  const services = mockServices[params.id || ''] || [];
+  const { isAuthenticated } = useAuth();
 
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedService, setSelectedService] = useState<ServiceType | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [step, setStep] = useState<'service' | 'time' | 'confirm' | 'success'>('service');
   const [bookingId, setBookingId] = useState<string>('');
+
+  useEffect(() => {
+    document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+  }, [i18n.language]);
+
+  const { data: barber, isLoading } = useQuery<BarberData>({
+    queryKey: ['/api/barbers', params.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/barbers/${params.id}`);
+      if (!res.ok) throw new Error('Failed to fetch barber');
+      return res.json();
+    },
+    enabled: !!params.id,
+  });
+
+  const { data: bookedSlots = [] } = useQuery<string[]>({
+    queryKey: ['/api/barbers', params.id, 'booked-slots', format(selectedDate, 'yyyy-MM-dd')],
+    queryFn: async () => {
+      const res = await fetch(`/api/barbers/${params.id}/booked-slots?date=${format(selectedDate, 'yyyy-MM-dd')}`);
+      if (!res.ok) throw new Error('Failed to fetch booked slots');
+      return res.json();
+    },
+    enabled: !!params.id,
+  });
+
+  const createBookingMutation = useMutation({
+    mutationFn: async (bookingData: any) => {
+      return await apiRequest('POST', '/api/bookings', bookingData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You need to sign in to book an appointment.",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to create booking. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
   }, []);
 
   const timeSlots = useMemo(() => {
-    return generateTimeSlots(selectedDate);
-  }, [selectedDate]);
+    const slots = [];
+    for (let hour = 9; hour < 18; hour++) {
+      for (let min = 0; min < 60; min += 30) {
+        const time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+        slots.push({
+          id: `slot-${time}`,
+          time,
+          available: !bookedSlots.includes(time),
+        });
+      }
+    }
+    return slots;
+  }, [bookedSlots]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <header className="sticky top-0 z-40 bg-background border-b px-4 py-4">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/book')}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <Skeleton className="h-7 w-32" />
+          </div>
+        </header>
+        <main className="px-4 py-6 space-y-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-16 w-16 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
 
   if (!barber) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <div className="flex items-center justify-center h-full">
+        <div className="flex items-center justify-center h-full pt-20">
           <p className="text-muted-foreground">{t('barberNotFound')}</p>
         </div>
         <BottomNav />
@@ -48,17 +158,35 @@ export default function BarberProfilePage() {
     );
   }
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to book an appointment.",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+      return;
+    }
+
     const id = generateBookingId();
-    setBookingId(id);
-    console.log('Booking confirmed:', {
-      bookingId: id,
-      barber: barber.name,
-      service: selectedService?.name,
-      date: format(selectedDate, 'yyyy-MM-dd'),
-      time: selectedTime,
-    });
-    setStep('success');
+    
+    try {
+      await createBookingMutation.mutateAsync({
+        bookingId: id,
+        barberId: barber.id,
+        serviceId: selectedService?.id,
+        date: format(selectedDate, 'yyyy-MM-dd'),
+        time: selectedTime,
+      });
+      
+      setBookingId(id);
+      setStep('success');
+    } catch (error) {
+      console.error('Booking failed:', error);
+    }
   };
 
   if (step === 'success') {
@@ -177,7 +305,7 @@ export default function BarberProfilePage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <MapPin className="h-3.5 w-3.5" />
-                    <span>{barber.distance} {t('km')}</span>
+                    <span>{barber.address || t('nearby')}</span>
                   </div>
                 </div>
               </div>
@@ -188,37 +316,45 @@ export default function BarberProfilePage() {
         {step === 'service' && (
           <section className="space-y-3">
             <h3 className="font-medium">{t('services')}</h3>
-            {services.map((service) => (
-              <Card 
-                key={service.id}
-                className={cn(
-                  "cursor-pointer transition-all hover-elevate",
-                  selectedService?.id === service.id && "ring-2 ring-primary"
-                )}
-                onClick={() => setSelectedService(service)}
-                data-testid={`service-${service.id}`}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{service.name}</p>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5" />
-                        <span>{service.duration} {t('min')}</span>
+            {barber.services && barber.services.length > 0 ? (
+              barber.services.map((service) => (
+                <Card 
+                  key={service.id}
+                  className={cn(
+                    "cursor-pointer transition-colors hover-elevate",
+                    selectedService?.id === service.id && "ring-2 ring-primary"
+                  )}
+                  onClick={() => setSelectedService(service)}
+                  data-testid={`service-${service.id}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{service.name}</p>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Clock className="h-3.5 w-3.5" />
+                          <span>{service.duration} {t('min')}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold">${service.price}</span>
+                        {selectedService?.id === service.id && (
+                          <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                            <Check className="h-4 w-4 text-primary-foreground" />
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold">${service.price}</span>
-                      {selectedService?.id === service.id && (
-                        <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
-                          <Check className="h-3 w-3 text-primary-foreground" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="py-6 text-center text-muted-foreground">
+                  No services available
                 </CardContent>
               </Card>
-            ))}
+            )}
 
             <Button 
               className="w-full mt-4" 
@@ -328,9 +464,10 @@ export default function BarberProfilePage() {
             <Button 
               className="w-full" 
               onClick={handleConfirm}
+              disabled={createBookingMutation.isPending}
               data-testid="button-confirm"
             >
-              {t('confirmBookingBtn')}
+              {createBookingMutation.isPending ? t('loading') : t('confirmBookingBtn')}
             </Button>
           </section>
         )}

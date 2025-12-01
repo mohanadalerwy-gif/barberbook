@@ -2,9 +2,9 @@
 
 ## Overview
 
-BarberBook is a minimalistic barber booking application that connects customers with nearby barbers. The platform enables users to discover barbers within a 5km radius using GPS location, browse services and pricing, schedule appointments, and manage their bookings. The application also provides a dedicated dashboard for barbers to manage their schedules, approve bookings, and set their availability.
+BarberBook is a minimalistic barber booking application that connects customers with nearby barbers. The platform enables users to discover barbers within a configurable radius (up to 10km) using GPS location, browse services and pricing, schedule appointments, and manage their bookings. The application also provides a dedicated dashboard for barbers to manage their schedules, approve bookings, and set their availability.
 
-The application follows a clean, fast, and simple design philosophy with minimal screens and straightforward user flows. It supports both light and dark themes, automatic language detection (English/Arabic with RTL support), and generates unique booking confirmation numbers.
+The application follows a clean, fast, and simple design philosophy with minimal screens and straightforward user flows. It supports both light and dark themes, automatic language detection (English/Arabic with RTL support), and generates unique booking confirmation numbers in the format BARB-YYYY-XXXXXX.
 
 ## User Preferences
 
@@ -43,47 +43,49 @@ Preferred communication style: Simple, everyday language.
 
 **Server Framework**: Express.js with TypeScript running on Node.js
 
-**Architecture Pattern**: Simple REST API with in-memory storage (MemStorage class)
+**Architecture Pattern**: REST API with PostgreSQL database using DatabaseStorage class
 
-**Session Management**: Currently using in-memory storage, designed to support connect-pg-simple for PostgreSQL sessions
+**Session Management**: express-session with connect-pg-simple for PostgreSQL session persistence
 
 **API Structure**:
 - Routes defined in `server/routes.ts` with `/api` prefix
-- Storage interface (IStorage) abstracts data operations for easy database swapping
-- Middleware for JSON body parsing, URL encoding, and request logging
+- Storage interface (IStorage) abstracts data operations
+- Middleware for JSON body parsing, URL encoding, request logging, and authentication
 
-**Authentication Strategy**: Planned support for:
-- Phone number authentication
+**Authentication**: Replit Auth integration supporting:
 - Apple Sign-In
-- Google Sign-In
-
-Currently uses mock authentication flow in the frontend.
+- Google Sign-In  
+- GitHub Sign-In
+- Email authentication
+Via OIDC (OpenID Connect) protocol with automatic session management.
 
 ### Data Storage
 
 **ORM**: Drizzle ORM configured for PostgreSQL
 
-**Schema Design** (from `shared/schema.ts`):
-- Users table with UUID primary keys
-- Schema validation using Zod for type safety
-- Designed for extension to include: barbers, services, bookings, time slots, working hours
+**Database Schema** (from `shared/schema.ts`):
+- `users` - User accounts with auth provider info (id, email, firstName, lastName, phone, role, authProvider, authProviderId)
+- `barbers` - Barber profiles linked to users (id, userId, bio, address, lat, lng, priceRange, isApproved, rating, reviewCount)
+- `services` - Services offered by barbers (id, barberId, name, price, duration)
+- `bookings` - Customer appointments (id, bookingId, customerId, barberId, serviceId, date, time, status)
+- `working_hours` - Barber weekly schedule (barberId, dayOfWeek, startTime, endTime, isWorking)
+- `sessions` - Authentication sessions
 
-**Current Implementation**: In-memory storage (MemStorage) with interface-based design allowing easy migration to PostgreSQL
-
-**Database Configuration**: Drizzle Kit configured for PostgreSQL migrations with schema located in `shared/schema.ts` and migrations output to `./migrations` directory
+**Database Implementation**: DatabaseStorage class with full CRUD operations and location-based queries using Haversine formula for distance calculation.
 
 ### Key Features and Business Logic
 
 **Location-Based Discovery**:
-- GPS-based barber discovery within configurable radius (default 5km)
-- Distance calculation and sorting of nearby barbers
-- Mock implementation using `getNearbyBarbers()` utility
+- GPS-based barber discovery within configurable radius (1-10km)
+- Distance calculation using Haversine formula in PostgreSQL
+- Sorting by proximity to user location
 
 **Booking System**:
-- Multi-step booking flow: Service Selection → Date/Time Selection → Confirmation
+- Multi-step booking flow: Service Selection → Date/Time Selection → Confirmation → Success
 - Unique booking ID generation in format `BARB-YYYY-XXXXXX`
 - Booking statuses: pending, confirmed, completed, cancelled, declined
 - Working hours management for barbers (7-day schedule with open/close times)
+- Real-time availability checking (booked slots disabled)
 
 **Barber Dashboard**:
 - Separate view for barber role with booking management
@@ -96,7 +98,7 @@ Currently uses mock authentication flow in the frontend.
 - Barber: Manage schedule, services, and bookings
 
 **Maps Integration**:
-- "Open Location" button on barber profiles
+- "Open Location" button on barber profiles and booking confirmations
 - Platform-specific deep linking (Apple Maps for iOS, Google Maps fallback)
 - Uses `geo:` URI scheme for mobile, HTTPS for web
 
@@ -105,11 +107,35 @@ Currently uses mock authentication flow in the frontend.
 - Theme persistence in localStorage
 - Background images switch based on color scheme preference
 
+**Bilingual Support**:
+- Automatic language detection from device settings
+- English (LTR) and Arabic (RTL) layouts
+- All UI strings translated
+
+## API Endpoints
+
+### Public Endpoints
+- `GET /api/barbers/nearby?lat={lat}&lng={lng}&radius={km}` - Get nearby barbers
+- `GET /api/barbers/:id` - Get barber details with services and working hours
+
+### Protected Endpoints (require authentication)
+- `GET /api/auth/user` - Get current authenticated user
+- `POST /api/barbers/register` - Register as a barber
+- `POST /api/bookings` - Create a new booking
+- `GET /api/bookings` - Get user's bookings
+- `GET /api/barber/bookings` - Get barber's received bookings
+- `PATCH /api/bookings/:id/status` - Update booking status
+
+### Authentication Endpoints
+- `GET /api/login` - Initiate Replit Auth login
+- `GET /api/login/callback` - Handle OAuth callback
+- `GET /api/logout` - Log out user
+
 ## External Dependencies
 
 ### UI and Styling
 - **Tailwind CSS**: Utility-first CSS framework for styling
-- **Radix UI**: Unstyled, accessible component primitives (accordion, dialog, dropdown, popover, etc.)
+- **Radix UI**: Unstyled, accessible component primitives
 - **shadcn/ui**: Pre-built component library based on Radix UI
 - **class-variance-authority**: Component variant styling
 - **Lucide React**: Icon library
@@ -123,14 +149,13 @@ Currently uses mock authentication flow in the frontend.
 
 ### Data Fetching and State
 - **TanStack Query (React Query)**: Server state management and caching
-- **Axios**: Planned HTTP client (currently using fetch)
 
 ### Date and Time
 - **date-fns**: Date manipulation and formatting library
 
 ### Database and ORM
 - **Drizzle ORM**: TypeScript ORM for PostgreSQL
-- **@neondatabase/serverless**: PostgreSQL driver for Neon (serverless-compatible)
+- **@neondatabase/serverless**: PostgreSQL driver for Neon
 
 ### Internationalization
 - **i18next**: Internationalization framework
@@ -138,7 +163,10 @@ Currently uses mock authentication flow in the frontend.
 
 ### Session Management
 - **express-session**: Session middleware for Express
-- **connect-pg-simple**: PostgreSQL session store (configured but not yet active)
+- **connect-pg-simple**: PostgreSQL session store
+
+### Authentication
+- **openid-client**: OIDC client for Replit Auth
 
 ### Build and Development Tools
 - **Vite**: Fast build tool and development server
@@ -146,18 +174,11 @@ Currently uses mock authentication flow in the frontend.
 - **ESBuild**: JavaScript bundler for production builds
 - **Wouter**: Lightweight routing library
 
-### Replit-Specific Plugins
-- **@replit/vite-plugin-runtime-error-modal**: Development error overlay
-- **@replit/vite-plugin-cartographer**: Code navigation tool
-- **@replit/vite-plugin-dev-banner**: Development environment indicator
+## Recent Changes
 
-### Utilities
-- **nanoid**: Unique ID generation
-- **clsx** and **tailwind-merge**: Conditional CSS class merging
-
-### Planned/Future Integrations
-- **Stripe**: Payment processing (dependency present)
-- **Nodemailer**: Email notifications (dependency present)
-- **OpenAI**: AI features (dependency present)
-- **JWT**: Token-based authentication (dependency present)
-- **Passport.js**: Authentication strategies (dependency present)
+- **December 2024**: Full database integration with PostgreSQL
+- **December 2024**: Implemented Replit Auth for Apple/Google/GitHub/email login
+- **December 2024**: Fixed nearby barbers SQL query (subquery pattern for distance filtering)
+- **December 2024**: Connected all frontend pages to real API endpoints
+- **December 2024**: Added complete booking flow with unique ID generation
+- **December 2024**: Implemented bilingual support with auto-detection
