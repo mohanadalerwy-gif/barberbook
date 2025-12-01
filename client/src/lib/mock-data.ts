@@ -1,84 +1,66 @@
-import type { Barber, Service, Booking, TimeSlot, BarberShop, WorkingHours } from './types';
+import type { Barber, Service, Booking, TimeSlot, WorkingHours } from './types';
 
 import barber1 from '@assets/generated_images/barber_profile_photo_1.png';
 import barber2 from '@assets/generated_images/barber_profile_photo_2.png';
 import barber3 from '@assets/generated_images/barber_profile_photo_3.png';
-import haircutImage from '@assets/generated_images/haircut_service_image.png';
-import beardImage from '@assets/generated_images/beard_grooming_service_image.png';
 
-// todo: remove mock functionality
-export const mockBarberShops: BarberShop[] = [
-  { id: '1', name: 'Classic Cuts', address: '123 Main St, Downtown', phone: '(555) 123-4567' },
-  { id: '2', name: 'The Gentleman\'s Den', address: '456 Oak Ave, Midtown', phone: '(555) 234-5678' },
-  { id: '3', name: 'Sharp & Clean', address: '789 Elm Blvd, Uptown', phone: '(555) 345-6789' },
-];
-
-// todo: remove mock functionality
 export const mockBarbers: Barber[] = [
   {
     id: '1',
     name: 'Marcus Johnson',
-    shopId: '1',
-    shopName: 'Classic Cuts',
     avatar: barber1,
-    specialty: 'Fades & Modern Styles',
     rating: 4.9,
     reviewCount: 127,
-    bio: 'With over 10 years of experience, I specialize in precision fades and contemporary styles.',
+    distance: 0.8,
+    priceRange: '$25-45',
+    address: '123 Main St',
+    bio: 'Professional barber with 10+ years of experience',
+    isApproved: true,
   },
   {
     id: '2',
     name: 'David Chen',
-    shopId: '2',
-    shopName: 'The Gentleman\'s Den',
     avatar: barber2,
-    specialty: 'Classic Cuts & Beard Grooming',
     rating: 4.8,
     reviewCount: 89,
-    bio: 'Master barber trained in traditional techniques with a modern touch.',
+    distance: 1.2,
+    priceRange: '$20-40',
+    address: '456 Oak Ave',
+    bio: 'Specializing in classic cuts and beard grooming',
+    isApproved: true,
   },
   {
     id: '3',
     name: 'Sarah Williams',
-    shopId: '3',
-    shopName: 'Sharp & Clean',
     avatar: barber3,
-    specialty: 'Creative Styles & Coloring',
     rating: 4.7,
     reviewCount: 156,
-    bio: 'Award-winning stylist passionate about creative expression through hair.',
+    distance: 2.5,
+    priceRange: '$30-55',
+    address: '789 Elm Blvd',
+    bio: 'Creative stylist passionate about modern trends',
+    isApproved: true,
   },
 ];
 
-// todo: remove mock functionality
-export const mockServices: Service[] = [
-  {
-    id: '1',
-    name: 'Classic Haircut',
-    description: 'Traditional haircut with consultation, wash, and style',
-    duration: 30,
-    price: 35,
-    image: haircutImage,
-  },
-  {
-    id: '2',
-    name: 'Beard Trim',
-    description: 'Professional beard shaping, trim, and conditioning',
-    duration: 20,
-    price: 20,
-    image: beardImage,
-  },
-  {
-    id: '3',
-    name: 'Full Grooming',
-    description: 'Complete package: haircut, beard trim, hot towel, and styling',
-    duration: 60,
-    price: 65,
-    image: haircutImage,
-  },
-];
+export const mockServices: Record<string, Service[]> = {
+  '1': [
+    { id: 's1', barberId: '1', name: 'Haircut', duration: 30, price: 25 },
+    { id: 's2', barberId: '1', name: 'Beard Trim', duration: 15, price: 15 },
+    { id: 's3', barberId: '1', name: 'Full Service', duration: 45, price: 45 },
+  ],
+  '2': [
+    { id: 's4', barberId: '2', name: 'Haircut', duration: 30, price: 20 },
+    { id: 's5', barberId: '2', name: 'Beard Trim', duration: 15, price: 12 },
+    { id: 's6', barberId: '2', name: 'Full Service', duration: 45, price: 40 },
+  ],
+  '3': [
+    { id: 's7', barberId: '3', name: 'Haircut', duration: 30, price: 30 },
+    { id: 's8', barberId: '3', name: 'Styling', duration: 20, price: 25 },
+    { id: 's9', barberId: '3', name: 'Full Service', duration: 60, price: 55 },
+  ],
+};
 
-// todo: remove mock functionality
 export const generateTimeSlots = (date: Date): TimeSlot[] => {
   const slots: TimeSlot[] = [];
   const startHour = 9;
@@ -97,53 +79,87 @@ export const generateTimeSlots = (date: Date): TimeSlot[] => {
   return slots;
 };
 
-// todo: remove mock functionality
 export const mockBookings: Booking[] = [
   {
     id: '1',
     customerId: 'c1',
     customerName: 'John Smith',
+    customerPhone: '+1 555-123-4567',
     barberId: '1',
     barberName: 'Marcus Johnson',
-    serviceId: '1',
-    serviceName: 'Classic Haircut',
+    serviceId: 's1',
+    serviceName: 'Haircut',
     date: '2024-12-02',
     time: '10:00',
-    status: 'pending',
+    status: 'confirmed',
     duration: 30,
-    price: 35,
+    price: 25,
   },
   {
     id: '2',
-    customerId: 'c2',
-    customerName: 'Mike Brown',
-    barberId: '1',
-    barberName: 'Marcus Johnson',
-    serviceId: '3',
-    serviceName: 'Full Grooming',
-    date: '2024-12-02',
-    time: '14:00',
-    status: 'confirmed',
-    duration: 60,
-    price: 65,
-  },
-  {
-    id: '3',
-    customerId: 'c3',
-    customerName: 'Alex Turner',
+    customerId: 'c1',
+    customerName: 'John Smith',
+    customerPhone: '+1 555-123-4567',
     barberId: '2',
     barberName: 'David Chen',
-    serviceId: '2',
-    serviceName: 'Beard Trim',
-    date: '2024-12-03',
-    time: '11:30',
-    status: 'pending',
-    duration: 20,
+    serviceId: 's4',
+    serviceName: 'Haircut',
+    date: '2024-11-28',
+    time: '14:00',
+    status: 'completed',
+    duration: 30,
     price: 20,
   },
 ];
 
-// todo: remove mock functionality
+export const mockBarberBookings: Booking[] = [
+  {
+    id: 'b1',
+    customerId: 'c2',
+    customerName: 'Mike Brown',
+    customerPhone: '+1 555-234-5678',
+    barberId: '1',
+    barberName: 'Marcus Johnson',
+    serviceId: 's1',
+    serviceName: 'Haircut',
+    date: '2024-12-01',
+    time: '09:00',
+    status: 'confirmed',
+    duration: 30,
+    price: 25,
+  },
+  {
+    id: 'b2',
+    customerId: 'c3',
+    customerName: 'Alex Turner',
+    customerPhone: '+1 555-345-6789',
+    barberId: '1',
+    barberName: 'Marcus Johnson',
+    serviceId: 's3',
+    serviceName: 'Full Service',
+    date: '2024-12-01',
+    time: '10:30',
+    status: 'pending',
+    duration: 45,
+    price: 45,
+  },
+  {
+    id: 'b3',
+    customerId: 'c4',
+    customerName: 'James Wilson',
+    customerPhone: '+1 555-456-7890',
+    barberId: '1',
+    barberName: 'Marcus Johnson',
+    serviceId: 's1',
+    serviceName: 'Haircut',
+    date: '2024-12-02',
+    time: '11:00',
+    status: 'pending',
+    duration: 30,
+    price: 25,
+  },
+];
+
 export const mockWorkingHours: WorkingHours[] = [
   { day: 'Monday', startTime: '09:00', endTime: '18:00', isWorking: true },
   { day: 'Tuesday', startTime: '09:00', endTime: '18:00', isWorking: true },
@@ -153,3 +169,7 @@ export const mockWorkingHours: WorkingHours[] = [
   { day: 'Saturday', startTime: '10:00', endTime: '16:00', isWorking: true },
   { day: 'Sunday', startTime: '00:00', endTime: '00:00', isWorking: false },
 ];
+
+export const getNearbyBarbers = (maxDistance: number = 5): Barber[] => {
+  return mockBarbers.filter(b => b.distance <= maxDistance && b.isApproved);
+};

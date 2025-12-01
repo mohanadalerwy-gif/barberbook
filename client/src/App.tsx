@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -7,51 +7,38 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useToast } from '@/hooks/use-toast';
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/HomePage";
-import BarbersPage from "@/pages/BarbersPage";
-import MyBookingsPage from "@/pages/MyBookingsPage";
+import BookPage from "@/pages/BookPage";
+import NearbyPage from "@/pages/NearbyPage";
+import BarberProfilePage from "@/pages/BarberProfilePage";
+import ProfilePage from "@/pages/ProfilePage";
+import SettingsPage from "@/pages/SettingsPage";
+import BarberRegisterPage from "@/pages/BarberRegisterPage";
 import BarberDashboard from "@/pages/BarberDashboard";
-import AdminDashboard from "@/pages/AdminDashboard";
-import type { User, UserRole } from '@/lib/types';
-
-// todo: remove mock functionality - replace with real auth
-const mockUsers: Record<UserRole, User> = {
-  customer: {
-    id: 'c1',
-    name: 'John Smith',
-    email: 'john@example.com',
-    role: 'customer',
-  },
-  barber: {
-    id: 'b1',
-    name: 'Marcus Johnson',
-    email: 'marcus@example.com',
-    role: 'barber',
-  },
-  admin: {
-    id: 'a1',
-    name: 'Admin User',
-    email: 'admin@barberbook.com',
-    role: 'admin',
-  },
-};
+import type { User } from '@/lib/types';
 
 function Router() {
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
-  const [loginRole, setLoginRole] = useState<UserRole>('customer');
 
-  const handleLogin = () => {
-    // todo: remove mock functionality - cycle through roles for demo
-    const roles: UserRole[] = ['customer', 'barber', 'admin'];
-    const currentIndex = roles.indexOf(loginRole);
-    const nextRole = roles[(currentIndex + 1) % roles.length];
-    
-    setUser(mockUsers[loginRole]);
-    setLoginRole(nextRole);
-    
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  const handleLogin = (method: 'phone' | 'apple' | 'google') => {
+    const mockUser: User = {
+      id: 'u1',
+      name: 'John Smith',
+      phone: '+1 555-123-4567',
+      email: 'john@example.com',
+      role: 'customer',
+    };
+    setUser(mockUser);
     toast({
       title: 'Signed in successfully',
-      description: `Welcome back, ${mockUsers[loginRole].name}! (Demo: Click sign in again for ${nextRole} role)`,
+      description: `Welcome, ${mockUser.name}!`,
     });
   };
 
@@ -65,21 +52,16 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/">
-        <HomePage user={user} onLogin={handleLogin} onLogout={handleLogout} />
+      <Route path="/" component={HomePage} />
+      <Route path="/book" component={BookPage} />
+      <Route path="/nearby" component={NearbyPage} />
+      <Route path="/barber/:id" component={BarberProfilePage} />
+      <Route path="/profile">
+        <ProfilePage user={user} onLogin={handleLogin} onLogout={handleLogout} />
       </Route>
-      <Route path="/barbers">
-        <BarbersPage user={user} onLogin={handleLogin} onLogout={handleLogout} />
-      </Route>
-      <Route path="/my-bookings">
-        <MyBookingsPage user={user} onLogin={handleLogin} onLogout={handleLogout} />
-      </Route>
-      <Route path="/barber-dashboard">
-        <BarberDashboard user={user} onLogout={handleLogout} />
-      </Route>
-      <Route path="/admin">
-        <AdminDashboard user={user} onLogout={handleLogout} />
-      </Route>
+      <Route path="/settings" component={SettingsPage} />
+      <Route path="/barber-register" component={BarberRegisterPage} />
+      <Route path="/barber-dashboard" component={BarberDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

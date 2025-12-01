@@ -1,40 +1,33 @@
-export type UserRole = 'customer' | 'barber' | 'admin';
+export type UserRole = 'customer' | 'barber';
 
 export interface User {
   id: string;
   name: string;
-  email: string;
+  phone?: string;
+  email?: string;
   role: UserRole;
   avatar?: string;
-}
-
-export interface BarberShop {
-  id: string;
-  name: string;
-  address: string;
-  phone: string;
-  image?: string;
 }
 
 export interface Barber {
   id: string;
   name: string;
-  shopId: string;
-  shopName: string;
   avatar: string;
-  specialty: string;
   rating: number;
   reviewCount: number;
+  distance: number;
+  priceRange: string;
+  address: string;
   bio: string;
+  isApproved: boolean;
 }
 
 export interface Service {
   id: string;
+  barberId: string;
   name: string;
-  description: string;
   duration: number;
   price: number;
-  image?: string;
 }
 
 export interface TimeSlot {
@@ -47,6 +40,7 @@ export interface Booking {
   id: string;
   customerId: string;
   customerName: string;
+  customerPhone?: string;
   barberId: string;
   barberName: string;
   serviceId: string;
@@ -63,4 +57,9 @@ export interface WorkingHours {
   startTime: string;
   endTime: string;
   isWorking: boolean;
+}
+
+export interface Location {
+  lat: number;
+  lng: number;
 }

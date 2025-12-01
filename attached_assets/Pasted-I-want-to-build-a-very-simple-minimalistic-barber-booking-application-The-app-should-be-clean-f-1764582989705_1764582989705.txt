@@ -1,0 +1,105 @@
+I want to build a very simple, minimalistic barber booking application.  
+The app should be clean, fast, and easy to use, with the fewest possible screens.  
+Below is exactly how I want the app to work and look:
+
+-----------------------------------------------------
+MAIN IDEA:
+-----------------------------------------------------
+The home page should automatically detect the user’s location and show all barbers available within a 5 km radius.  
+The interface must be minimal, simple, and not crowded.
+
+-----------------------------------------------------
+APP STRUCTURE (User App):
+-----------------------------------------------------
+
+1) Home Page:
+- Simple design.
+- Based on GPS location, show nearby barbers within a 5 km radius.
+- List of barbers shown in clean cards (photo, rating, distance, price range).
+- Two main buttons:
+   a) “Book Appointment”
+   b) “Nearby Barbers”
+- Bottom navigation bar with only 4 icons:
+   - Book Appointment
+   - Nearby Barbers
+   - Home
+   - Profile
+   - Settings (optional if needed in profile)
+
+2) Book Appointment Page:
+- When the user clicks “Book Appointment”, show a list of barbers.
+- Selecting a barber opens that barber’s profile:
+   - Services
+   - Prices
+   - Available time slots
+- User chooses a time slot and confirms booking.
+
+3) Profile Page:
+- User can sign up or sign in using:
+   - Phone number
+   - Apple login
+   - Android/Google login
+- After logging in, the profile shows:
+   - User name
+   - Upcoming appointments
+   - Past appointments
+
+4) Settings Page:
+- App language selection
+- About the app
+- Support
+- A button for barbers: “Barber Registration”
+
+-----------------------------------------------------
+BARBER SIDE:
+-----------------------------------------------------
+
+Option A (Preferred):
+Barbers can register inside the same app:
+- Sign up from “Barber Registration”
+- After approval, barbers can sign in
+- Barber dashboard shows:
+   - Today’s appointments
+   - Upcoming appointments
+   - Customer names
+   - Ability to accept or decline
+   - Ability to set working hours
+
+Option B (If too difficult to build in same app):
+Create a separate simple barber-only app:
+- Barber login
+- View schedule
+- View customers
+- Manage available time slots
+Design must match the minimalistic style shown in the sketch.
+
+-----------------------------------------------------
+STYLE:
+-----------------------------------------------------
+The entire app must follow a minimalistic style:
+- Simple colors
+- Simple layout
+- Clean spacing
+- Very easy to navigate
+- No complicated pages
+- No unnecessary elements
+
+-----------------------------------------------------
+GOALS FOR THE MVP:
+-----------------------------------------------------
+- Show nearby barbers based on user location (5 km radius)
+- User can book an appointment
+- Barber can receive appointments and manage their schedule
+- Simple login system
+- Clean minimalistic UI as in the attached sketch and screenshots
+
+-----------------------------------------------------
+
+Please generate:
+- App structure
+- File structure
+- Required screens
+- Backend design (database schema)
+- API endpoints
+- Location-based filtering logic
+- A simple working MVP with the minimal UI described above
