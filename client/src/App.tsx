@@ -9,6 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/HomePage";
 import BookPage from "@/pages/BookPage";
+import BookByBarberPage from "@/pages/BookByBarberPage";
 import NearbyPage from "@/pages/NearbyPage";
 import BarberProfilePage from "@/pages/BarberProfilePage";
 import ProfilePage from "@/pages/ProfilePage";
@@ -28,6 +29,7 @@ function Router() {
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/book" component={BookPage} />
+      <Route path="/book-by-barber" component={BookByBarberPage} />
       <Route path="/nearby" component={NearbyPage} />
       <Route path="/barber/:id" component={BarberProfilePage} />
       <Route path="/profile" component={ProfilePage} />

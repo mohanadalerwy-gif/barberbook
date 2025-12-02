@@ -37,6 +37,35 @@ export async function registerRoutes(
     }
   });
 
+  app.get('/api/barbers', async (req, res) => {
+    try {
+      const allBarbers = await storage.getAllBarbers();
+
+      const formatted = allBarbers.map(b => ({
+        id: b.id,
+        name: [b.user.firstName, b.user.lastName].filter(Boolean).join(' ') || 'Unknown',
+        avatar: b.user.profileImageUrl || '',
+        rating: parseFloat(b.rating || '0'),
+        reviewCount: b.reviewCount || 0,
+        priceRange: b.priceRange || '$20 - $50',
+        address: b.address || '',
+        bio: b.bio || '',
+        isApproved: b.isApproved,
+        lat: parseFloat(b.lat || '0'),
+        lng: parseFloat(b.lng || '0'),
+        shopName: b.shopName || '',
+        phone: b.phone || '',
+        haircutPrice: b.haircutPrice ? parseFloat(b.haircutPrice) : null,
+        beardPrice: b.beardPrice ? parseFloat(b.beardPrice) : null,
+      }));
+
+      res.json(formatted);
+    } catch (error) {
+      console.error("Error fetching barbers:", error);
+      res.status(500).json({ message: "Failed to fetch barbers" });
+    }
+  });
+
   app.get('/api/barbers/nearby', async (req, res) => {
     try {
       const lat = parseFloat(req.query.lat as string);
@@ -62,6 +91,10 @@ export async function registerRoutes(
         isApproved: b.isApproved,
         lat: parseFloat(b.lat || '0'),
         lng: parseFloat(b.lng || '0'),
+        shopName: b.shopName || '',
+        phone: b.phone || '',
+        haircutPrice: b.haircutPrice ? parseFloat(b.haircutPrice) : null,
+        beardPrice: b.beardPrice ? parseFloat(b.beardPrice) : null,
       }));
 
       res.json(formatted);
@@ -94,6 +127,10 @@ export async function registerRoutes(
         isApproved: barber.isApproved,
         lat: parseFloat(barber.lat || '0'),
         lng: parseFloat(barber.lng || '0'),
+        shopName: barber.shopName || '',
+        phone: barber.phone || '',
+        haircutPrice: barber.haircutPrice ? parseFloat(barber.haircutPrice) : null,
+        beardPrice: barber.beardPrice ? parseFloat(barber.beardPrice) : null,
         services: services.map(s => ({
           id: s.id,
           barberId: s.barberId,
@@ -151,14 +188,54 @@ export async function registerRoutes(
         return res.status(400).json({ message: "User is already registered as a barber" });
       }
 
-      const result = insertBarberSchema.safeParse({ ...req.body, userId });
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid data", errors: result.error.issues });
+      const { fullName, shopName, phone, haircutPrice, beardPrice, address, bio, lat, lng, priceRange } = req.body;
+
+      if (!shopName || !phone || !haircutPrice || !beardPrice || !address) {
+        return res.status(400).json({ message: "Missing required fields" });
       }
 
-      await storage.updateUser(userId, { role: 'barber' });
-      const barber = await storage.createBarber(result.data);
-      res.status(201).json(barber);
+      const nameParts = (fullName || '').trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      await storage.updateUser(userId, { 
+        role: 'barber',
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        phone: phone || undefined,
+      });
+
+      const barberData = {
+        userId,
+        shopName: shopName,
+        phone: phone,
+        haircutPrice: haircutPrice,
+        beardPrice: beardPrice,
+        address: address,
+        bio: bio || '',
+        lat: lat || '25.2048',
+        lng: lng || '55.2708',
+        priceRange: priceRange || `$${haircutPrice} - $${parseFloat(haircutPrice) + parseFloat(beardPrice)}`,
+        isApproved: true,
+      };
+
+      const barber = await storage.createBarber(barberData);
+
+      const haircutService = await storage.createService({
+        barberId: barber.id,
+        name: 'Haircut',
+        duration: 30,
+        price: haircutPrice,
+      });
+
+      const beardService = await storage.createService({
+        barberId: barber.id,
+        name: 'Beard Trim',
+        duration: 15,
+        price: beardPrice,
+      });
+
+      res.status(201).json({ ...barber, services: [haircutService, beardService] });
     } catch (error) {
       console.error("Error registering barber:", error);
       res.status(500).json({ message: "Failed to register barber" });

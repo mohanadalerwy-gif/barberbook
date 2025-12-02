@@ -1,0 +1,93 @@
+I want you to FIX and UPDATE the barber booking application with the following REQUIRED updates.  
+Please DO NOT skip any item below — every point MUST be implemented.
+
+====================
+1) ADD THE SECOND BOOKING METHOD
+====================
+Currently only “Book by Location” exists.  
+You MUST add the missing second option:
+
+**(A) Book by Location** → already exists  
+**(B) Book by Barber** → MISSING → create this page
+
+The new “Book by Barber” page must:
+- Show list of all available barbers from the database
+- Each barber card shows: profile photo, barber name, shop name, price for haircut & beard
+- Clicking a barber → opens that barber's profile + appointment schedule
+
+====================
+2) FIX HOME SCREEN BACKGROUND
+====================
+You must apply the background images the user provided:
+- Use image “light-bg.png” for Light Mode
+- Use image “dark-bg.png” for Dark Mode
+
+Rules:
+- Background must fill the screen
+- Must NOT distort layout
+- Must still look minimalistic
+
+====================
+3) ENABLE AUTOMATIC LANGUAGE DETECTION
+====================
+Language must switch automatically based on device settings:
+- If device language = Arabic → app loads Arabic UI
+- If device language = English → load English UI
+
+Every label, button, message, menu, and screen must support both languages.
+
+====================
+4) FIX BARBER REGISTRATION PAGE
+====================
+The barber registration must include the following REQUIRED fields:
+
+- Barber Full Name
+- Shop/Salon Name
+- Haircut Price
+- Beard Price
+- Phone Number (used as login ID)
+- Location Coordinates (GPS)  
+  → Add button: “Use My Location”  
+  → Fetch latitude/longitude automatically
+
+After registration:
+- Barber account saved to database
+- Barber can log in using phone number
+- Barber dashboard opens with his appointments and clients
+
+====================
+5) FIX CUSTOMER REGISTRATION
+====================
+Customer must register/login using:
+- Phone Number
+- Apple Login (optional)
+- Android Login (optional)
+
+Their phone number MUST be saved in the database and tied to their appointments.
+
+====================
+6) BOOKING NUMBER FORMAT
+====================
+When a customer confirms an appointment, generate:
+
+BARB-2025-XXXXXX
+
+Save it in database for both:
+- Customer
+- Barber
+
+Show it in the confirmation screen.
+
+====================
+7) LOCATION BUTTON
+====================
+In the appointment details page, add:
+Button: “Open Location”
+
+It must open:
+- Google Maps OR Apple Maps using geo: or https://maps.google.com/?q=
+
+====================
+8) DATABASE STRUCTURE FIX
+====================
+Ensure the databa

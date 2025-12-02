@@ -19,6 +19,7 @@ export interface IStorage {
 
   getBarber(id: string): Promise<Barber | undefined>;
   getBarberByUserId(userId: string): Promise<Barber | undefined>;
+  getAllBarbers(): Promise<(Barber & { user: User })[]>;
   getNearbyBarbers(lat: number, lng: number, radiusKm: number): Promise<(Barber & { user: User; distance: number })[]>;
   createBarber(barber: InsertBarber): Promise<Barber>;
   updateBarber(id: string, data: Partial<InsertBarber>): Promise<Barber | undefined>;
@@ -94,16 +95,33 @@ export class DatabaseStorage implements IStorage {
     return barber || undefined;
   }
 
+  async getAllBarbers(): Promise<(Barber & { user: User })[]> {
+    const result = await db
+      .select()
+      .from(barbers)
+      .innerJoin(users, eq(barbers.userId, users.id))
+      .where(eq(barbers.isApproved, true));
+    
+    return result.map(row => ({
+      ...row.barbers,
+      user: row.users,
+    }));
+  }
+
   async getNearbyBarbers(lat: number, lng: number, radiusKm: number): Promise<(Barber & { user: User; distance: number })[]> {
     const result = await db.execute(sql`
       SELECT * FROM (
         SELECT 
           b.id,
           b.user_id,
+          b.shop_name,
+          b.phone as barber_phone,
           b.bio,
           b.address,
           b.lat,
           b.lng,
+          b.haircut_price,
+          b.beard_price,
           b.price_range,
           b.is_approved,
           b.rating,
@@ -135,10 +153,14 @@ export class DatabaseStorage implements IStorage {
     return (result.rows as any[]).map(row => ({
       id: row.id,
       userId: row.user_id,
+      shopName: row.shop_name,
+      phone: row.barber_phone,
       bio: row.bio,
       address: row.address,
       lat: row.lat,
       lng: row.lng,
+      haircutPrice: row.haircut_price,
+      beardPrice: row.beard_price,
       priceRange: row.price_range,
       isApproved: row.is_approved,
       rating: row.rating,

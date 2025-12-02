@@ -20,11 +20,16 @@ import {
 import BottomNav from '@/components/BottomNav';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, Scissors, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Scissors, CheckCircle, MapPin, Loader2 } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { isUnauthorizedError } from '@/lib/authUtils';
 
 const formSchema = z.object({
+  fullName: z.string().min(2, 'Please enter your full name'),
+  shopName: z.string().min(2, 'Please enter your shop name'),
+  phone: z.string().min(8, 'Please enter a valid phone number'),
+  haircutPrice: z.string().min(1, 'Please enter haircut price'),
+  beardPrice: z.string().min(1, 'Please enter beard price'),
   address: z.string().min(5, 'Please enter your work address'),
   bio: z.string().optional(),
   lat: z.string().optional(),
@@ -39,6 +44,7 @@ export default function BarberRegisterPage() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const [submitted, setSubmitted] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   useEffect(() => {
     document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
@@ -47,6 +53,11 @@ export default function BarberRegisterPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      fullName: '',
+      shopName: '',
+      phone: '',
+      haircutPrice: '',
+      beardPrice: '',
       address: '',
       bio: '',
       lat: '',
@@ -57,11 +68,15 @@ export default function BarberRegisterPage() {
   const registerMutation = useMutation({
     mutationFn: async (data: FormData) => {
       return await apiRequest('POST', '/api/barbers/register', {
+        shopName: data.shopName,
+        phone: data.phone,
+        haircutPrice: data.haircutPrice,
+        beardPrice: data.beardPrice,
         address: data.address,
         bio: data.bio,
         lat: data.lat || '25.2048',
         lng: data.lng || '55.2708',
-        priceRange: '$20 - $50',
+        priceRange: `$${data.haircutPrice} - $${parseFloat(data.haircutPrice) + parseFloat(data.beardPrice)}`,
       });
     },
     onSuccess: () => {
@@ -90,6 +105,38 @@ export default function BarberRegisterPage() {
 
   const onSubmit = (data: FormData) => {
     registerMutation.mutate(data);
+  };
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: t('error'),
+        description: t('locationError'),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        form.setValue('lat', position.coords.latitude.toString());
+        form.setValue('lng', position.coords.longitude.toString());
+        setGettingLocation(false);
+        toast({
+          title: t('success'),
+          description: t('locationObtained'),
+        });
+      },
+      () => {
+        setGettingLocation(false);
+        toast({
+          title: t('error'),
+          description: t('locationError'),
+          variant: "destructive",
+        });
+      }
+    );
   };
 
   useEffect(() => {
@@ -175,6 +222,101 @@ export default function BarberRegisterPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('barberFullName')}</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder={t('enterFullName')}
+                      {...field} 
+                      data-testid="input-full-name"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="shopName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('shopName')}</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder={t('enterShopName')}
+                      {...field} 
+                      data-testid="input-shop-name"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('phoneNumber')}</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="tel"
+                      placeholder={t('enterPhoneNumber')}
+                      {...field} 
+                      data-testid="input-phone"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="haircutPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('haircutPrice')}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        placeholder={t('enterHaircutPrice')}
+                        {...field} 
+                        data-testid="input-haircut-price"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="beardPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('beardPrice')}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        placeholder={t('enterBeardPrice')}
+                        {...field} 
+                        data-testid="input-beard-price"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
               name="address"
               render={({ field }) => (
                 <FormItem>
@@ -190,6 +332,65 @@ export default function BarberRegisterPage() {
                 </FormItem>
               )}
             />
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <FormLabel>{t('coordinates')}</FormLabel>
+                <Button 
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGetLocation}
+                  disabled={gettingLocation}
+                  data-testid="button-get-location"
+                >
+                  {gettingLocation ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <MapPin className="h-4 w-4 mr-2" />
+                  )}
+                  {t('useMyLocation')}
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="lat"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input 
+                          placeholder={t('latitude')}
+                          {...field} 
+                          readOnly
+                          className="bg-muted"
+                          data-testid="input-lat"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="lng"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input 
+                          placeholder={t('longitude')}
+                          {...field} 
+                          readOnly
+                          className="bg-muted"
+                          data-testid="input-lng"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <FormField
               control={form.control}

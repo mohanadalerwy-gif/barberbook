@@ -9,6 +9,8 @@ import BarberCard from '@/components/BarberCard';
 import BottomNav from '@/components/BottomNav';
 import { MapPin, Calendar, Navigation, Scissors, Sparkles } from 'lucide-react';
 import type { Barber } from '@/lib/types';
+import lightBg from '@assets/light_background.png';
+import darkBg from '@assets/dark_background.png';
 
 function DecorativeAccent() {
   return (
@@ -62,8 +64,16 @@ export default function HomePage() {
     enabled: !!location,
   });
 
+  const isDarkMode = document.documentElement.classList.contains('dark');
+
   return (
-    <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+    <div 
+      className="min-h-screen pb-20 bg-cover bg-center bg-no-repeat"
+      style={{ 
+        backgroundImage: `url(${isDarkMode ? darkBg : lightBg})`,
+      }}
+    >
+      <div className="min-h-screen bg-background/70 backdrop-blur-[2px]">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center justify-between">
           <div>
@@ -154,6 +164,7 @@ export default function HomePage() {
       </main>
 
       <BottomNav />
+      </div>
     </div>
   );
 }

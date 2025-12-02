@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, MapPin } from 'lucide-react';
+import { Star, MapPin, Store, Scissors } from 'lucide-react';
 import type { Barber } from '@/lib/types';
 
 interface BarberCardProps {
@@ -28,20 +28,43 @@ export default function BarberCard({ barber, onClick }: BarberCardProps) {
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-base truncate">{barber.name}</h3>
             
+            {barber.shopName && (
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Store className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="truncate">{barber.shopName}</span>
+              </div>
+            )}
+            
             <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
                 <span>{barber.rating}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5" />
-                <span>{barber.distance} {t('km')}</span>
-              </div>
+              {barber.distance !== undefined && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  <span>{barber.distance} {t('km')}</span>
+                </div>
+              )}
             </div>
             
-            <p className="text-sm font-medium text-primary mt-1">
-              {barber.priceRange}
-            </p>
+            {(barber.haircutPrice || barber.beardPrice) ? (
+              <div className="flex items-center gap-2 text-sm text-primary mt-1">
+                {barber.haircutPrice && (
+                  <span className="flex items-center gap-1">
+                    <Scissors className="h-3 w-3" />
+                    ${barber.haircutPrice}
+                  </span>
+                )}
+                {barber.beardPrice && (
+                  <span>{t('beard')}: ${barber.beardPrice}</span>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm font-medium text-primary mt-1">
+                {barber.priceRange}
+              </p>
+            )}
           </div>
         </div>
       </CardContent>

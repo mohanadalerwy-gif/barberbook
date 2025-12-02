@@ -15,13 +15,17 @@ export interface Barber {
   avatar: string;
   rating: number;
   reviewCount: number;
-  distance: number;
+  distance?: number;
   priceRange: string;
   address: string;
   bio: string;
   isApproved: boolean;
   lat: number;
   lng: number;
+  shopName?: string;
+  phone?: string;
+  haircutPrice?: number;
+  beardPrice?: number;
 }
 
 export interface Service {
