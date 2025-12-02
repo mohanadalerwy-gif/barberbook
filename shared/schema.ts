@@ -226,7 +226,10 @@ export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
 export const createSupportTicketInputSchema = z.object({
   category: z.enum(['price_change', 'technical_issue', 'general_question']),
   message: z.string().min(10).max(2000),
-  photoUrl: z.string().url().optional().nullable(),
+  photoUrl: z.preprocess(
+    (val) => (typeof val === 'string' && val.trim() === '' ? undefined : val),
+    z.string().url().optional().nullable()
+  ),
 });
 
 export type CreateSupportTicketInput = z.infer<typeof createSupportTicketInputSchema>;

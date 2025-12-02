@@ -181,5 +181,10 @@
   "failedToSubmitRequest": "فشل إرسال الطلب",
   "pendingRequestExists": "لديك طلب تغيير سعر قيد الانتظار",
   "waitForApproval": "يرجى الانتظار حتى يتم مراجعة طلبك",
-  "previousRequests": "الطلبات السابقة"
+  "previousRequests": "الطلبات السابقة",
+  "uploadPhoto": "رفع صورة",
+  "imageUploaded": "تم رفع الصورة بنجاح",
+  "failedToUploadImage": "فشل رفع الصورة",
+  "choosePhoto": "اختر صورة",
+  "changePhoto": "تغيير الصورة"
 }

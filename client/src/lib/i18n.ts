@@ -15,6 +15,17 @@ const getDeviceLanguage = () => {
 
 const detectedLang = getDeviceLanguage();
 
+// Set document direction based on language
+export const setDocumentDirection = (lang: string) => {
+  const dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.documentElement.dir = dir;
+  document.documentElement.lang = lang;
+  localStorage.setItem('language', lang);
+};
+
+// Set initial direction
+setDocumentDirection(detectedLang);
+
 i18n
   .use(initReactI18next)
   .init({
@@ -28,5 +39,10 @@ i18n
       escapeValue: false,
     },
   });
+
+// Listen for language changes and update direction
+i18n.on('languageChanged', (lang) => {
+  setDocumentDirection(lang);
+});
 
 export default i18n;

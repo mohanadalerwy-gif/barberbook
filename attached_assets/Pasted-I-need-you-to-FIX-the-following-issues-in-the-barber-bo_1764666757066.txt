@@ -1,0 +1,60 @@
+I need you to FIX the following issues in the barber booking application.  
+Do NOT skip any item.  
+All items are required.
+
+====================================
+1) FIX Support Ticket Submission
+====================================
+Currently, submitting a support ticket returns “submitted failed”.
+You MUST fix the entire ticket creation process.
+
+Requirements:
+- Ensure the POST request for creating a ticket works correctly.
+- Validate all required fields before submission.
+- Save tickets into the database under the correct collection.
+- Return a success response and show confirmation to the user.
+- If there is an error, show a clear error message.
+- Make sure tickets are sorted by latest date in “My Tickets”.
+
+====================================
+2) ADD Full Arabic Language Support
+====================================
+Implement full bilingual support (Arabic + English).
+
+Required work:
+- Add i18n system to the app.
+- Create translation files:
+  /translations/en.json
+  /translations/ar.json
+- Detect device language automatically.
+- If device = Arabic → load Arabic UI.
+- If English → load English UI.
+- ALL labels, buttons, menus, messages must use the translation system.
+- Remove all hard-coded text.
+
+====================================
+3) ENABLE Direct Image Upload From Device
+====================================
+Users and barbers must be able to upload a new profile picture directly from their phone.
+
+Requirements:
+- Replace the “Image URL” input with actual image upload.
+- Use file picker (mobile-friendly).
+- Upload image to storage (cloud, database, or app storage).
+- Get the uploaded image URL automatically.
+- Update the user’s or barber’s profile picture in the database.
+- Update the UI so the new picture displays immediately.
+
+====================================
+4) SAFETY & UI NOTES
+====================================
+- Do NOT change working features.
+- Keep the UI minimalistic and clean.
+- Ensure image uploads work on BOTH iOS and Android.
+- Ensure support ticket creation works for both customers and barbers.
+
+====================================
+IMPORTANT
+====================================
+Apply ALL fixes exactly as written above.
+Do NOT skip or simplify any part.

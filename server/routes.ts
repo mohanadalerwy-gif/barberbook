@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { ObjectPermission } from "./objectAcl";
 import { 
   insertBookingSchema, 
   insertBarberSchema, 
@@ -608,6 +610,113 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error creating price change request:", error);
       res.status(500).json({ message: "Failed to create price change request" });
+    }
+  });
+
+  app.get("/objects/:objectPath(*)", isAuthenticated, async (req: any, res) => {
+    const userId = req.user?.claims?.sub;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      const canAccess = await objectStorageService.canAccessObjectEntity({
+        objectFile,
+        userId: userId,
+        requestedPermission: ObjectPermission.READ,
+      });
+      if (!canAccess) {
+        return res.sendStatus(401);
+      }
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error checking object access:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
+  app.post("/api/objects/upload", isAuthenticated, async (req: any, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const { uploadURL, objectId } = await objectStorageService.getObjectEntityUploadURL();
+      
+      if (!req.session.pendingUploads) {
+        req.session.pendingUploads = [];
+      }
+      req.session.pendingUploads.push(objectId);
+      if (req.session.pendingUploads.length > 10) {
+        req.session.pendingUploads = req.session.pendingUploads.slice(-10);
+      }
+      
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ message: "Failed to get upload URL" });
+    }
+  });
+
+  app.put("/api/profile-images", isAuthenticated, async (req: any, res) => {
+    if (!req.body.imageURL) {
+      return res.status(400).json({ error: "imageURL is required" });
+    }
+
+    const userId = req.user?.claims?.sub;
+    const imageURL = req.body.imageURL;
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      
+      if (!imageURL.startsWith("https://storage.googleapis.com/")) {
+        return res.status(400).json({ error: "Invalid image URL format" });
+      }
+      
+      const url = new URL(imageURL);
+      const objectPath = url.pathname;
+      const privateDir = objectStorageService.getPrivateObjectDir();
+      
+      const normalizedPrivateDir = privateDir.endsWith("/") ? privateDir : `${privateDir}/`;
+      
+      if (!objectPath.startsWith(normalizedPrivateDir)) {
+        return res.status(403).json({ error: "Access denied: invalid object path" });
+      }
+      
+      if (!objectPath.includes("/uploads/")) {
+        return res.status(403).json({ error: "Access denied: not an upload path" });
+      }
+      
+      const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        imageURL,
+        {
+          owner: userId,
+          visibility: "public",
+        }
+      );
+
+      await storage.updateUser(userId, { profileImageUrl: normalizedPath });
+
+      res.status(200).json({ objectPath: normalizedPath });
+    } catch (error) {
+      console.error("Error setting profile image:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.status(404).json({ error: "Object not found" });
+      }
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/public-objects/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      objectStorageService.downloadObject(file, res);
+    } catch (error) {
+      console.error("Error searching for public object:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   });
 

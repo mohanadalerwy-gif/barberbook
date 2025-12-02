@@ -181,5 +181,10 @@
   "failedToSubmitRequest": "Failed to submit request",
   "pendingRequestExists": "You have a pending price change request",
   "waitForApproval": "Please wait for support to review your request",
-  "previousRequests": "Previous Requests"
+  "previousRequests": "Previous Requests",
+  "uploadPhoto": "Upload Photo",
+  "imageUploaded": "Image uploaded successfully",
+  "failedToUploadImage": "Failed to upload image",
+  "choosePhoto": "Choose Photo",
+  "changePhoto": "Change Photo"
 }
