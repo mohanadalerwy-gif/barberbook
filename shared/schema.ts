@@ -5,6 +5,8 @@ import { z } from "zod";
 
 export const userRoleEnum = pgEnum('user_role', ['customer', 'barber']);
 export const bookingStatusEnum = pgEnum('booking_status', ['pending', 'confirmed', 'declined', 'completed', 'cancelled']);
+export const ticketStatusEnum = pgEnum('ticket_status', ['pending', 'approved', 'rejected']);
+export const ticketCategoryEnum = pgEnum('ticket_category', ['price_change', 'technical_issue', 'general_question']);
 
 export const sessions = pgTable(
   "sessions",
@@ -75,6 +77,30 @@ export const bookings = pgTable("bookings", {
   time: text("time").notNull(),
   status: bookingStatusEnum("status").notNull().default('pending'),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const supportTickets = pgTable("support_tickets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  category: ticketCategoryEnum("category").notNull(),
+  message: text("message").notNull(),
+  photoUrl: text("photo_url"),
+  status: ticketStatusEnum("status").notNull().default('pending'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const priceChangeRequests = pgTable("price_change_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  barberId: varchar("barber_id").notNull().references(() => barbers.id),
+  oldHaircutPrice: decimal("old_haircut_price", { precision: 10, scale: 2 }).notNull(),
+  oldBeardPrice: decimal("old_beard_price", { precision: 10, scale: 2 }).notNull(),
+  newHaircutPrice: decimal("new_haircut_price", { precision: 10, scale: 2 }).notNull(),
+  newBeardPrice: decimal("new_beard_price", { precision: 10, scale: 2 }).notNull(),
+  notes: text("notes"),
+  status: ticketStatusEnum("status").notNull().default('pending'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -153,6 +179,18 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   createdAt: true,
 });
 
+export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPriceChangeRequestSchema = createInsertSchema(priceChangeRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -167,3 +205,36 @@ export type WorkingHours = typeof workingHours.$inferSelect;
 
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookings.$inferSelect;
+
+export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;
+export type SupportTicket = typeof supportTickets.$inferSelect;
+
+export type InsertPriceChangeRequest = z.infer<typeof insertPriceChangeRequestSchema>;
+export type PriceChangeRequest = typeof priceChangeRequests.$inferSelect;
+
+export const updateUserProfileSchema = z.object({
+  firstName: z.string().max(100).optional().transform(val => val || undefined),
+  lastName: z.string().max(100).optional().transform(val => val || undefined),
+  profileImageUrl: z.string().optional().nullable().transform(val => {
+    if (!val || val.trim() === '') return null;
+    return val;
+  }),
+});
+
+export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
+
+export const createSupportTicketInputSchema = z.object({
+  category: z.enum(['price_change', 'technical_issue', 'general_question']),
+  message: z.string().min(10).max(2000),
+  photoUrl: z.string().url().optional().nullable(),
+});
+
+export type CreateSupportTicketInput = z.infer<typeof createSupportTicketInputSchema>;
+
+export const createPriceChangeRequestInputSchema = z.object({
+  newHaircutPrice: z.union([z.string(), z.number()]).transform(val => parseFloat(String(val))).refine(val => !isNaN(val) && val >= 0, { message: "Invalid haircut price" }),
+  newBeardPrice: z.union([z.string(), z.number()]).transform(val => parseFloat(String(val))).refine(val => !isNaN(val) && val >= 0, { message: "Invalid beard price" }),
+  notes: z.string().max(1000).optional().nullable(),
+});
+
+export type CreatePriceChangeRequestInput = z.infer<typeof createPriceChangeRequestInputSchema>;

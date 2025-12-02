@@ -17,6 +17,8 @@ import {
   Clock,
   CheckCircle,
   Scissors,
+  Edit,
+  HeadphonesIcon,
 } from 'lucide-react';
 import { format, parseISO, isPast } from 'date-fns';
 
@@ -180,9 +182,29 @@ export default function ProfilePage() {
                   </Badge>
                 )}
               </div>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => navigate('/profile/edit')}
+                data-testid="button-edit-profile"
+              >
+                <Edit className="h-5 w-5" />
+              </Button>
             </div>
           </CardContent>
         </Card>
+
+        <div className="grid grid-cols-1 gap-3">
+          <Button 
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => navigate('/support')}
+            data-testid="button-support-center"
+          >
+            <HeadphonesIcon className="h-4 w-4 mr-2" />
+            {t('supportCenter')}
+          </Button>
+        </div>
 
         {user.role === 'barber' && (
           <Button 

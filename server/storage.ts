@@ -1,13 +1,15 @@
 import { 
-  users, barbers, services, workingHours, bookings,
+  users, barbers, services, workingHours, bookings, supportTickets, priceChangeRequests,
   type User, type InsertUser, type UpsertUser,
   type Barber, type InsertBarber,
   type Service, type InsertService,
   type WorkingHours, type InsertWorkingHours,
-  type Booking, type InsertBooking
+  type Booking, type InsertBooking,
+  type SupportTicket, type InsertSupportTicket,
+  type PriceChangeRequest, type InsertPriceChangeRequest
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -40,6 +42,12 @@ export interface IStorage {
   getBookingsByBarberAndDate(barberId: string, date: string): Promise<Booking[]>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBookingStatus(id: string, status: Booking['status']): Promise<Booking | undefined>;
+
+  getSupportTicketsByUser(userId: string): Promise<SupportTicket[]>;
+  createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket>;
+
+  getPriceChangeRequestsByBarber(barberId: string): Promise<PriceChangeRequest[]>;
+  createPriceChangeRequest(request: InsertPriceChangeRequest): Promise<PriceChangeRequest>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -259,6 +267,28 @@ export class DatabaseStorage implements IStorage {
   async updateBookingStatus(id: string, status: Booking['status']): Promise<Booking | undefined> {
     const [booking] = await db.update(bookings).set({ status }).where(eq(bookings.id, id)).returning();
     return booking || undefined;
+  }
+
+  async getSupportTicketsByUser(userId: string): Promise<SupportTicket[]> {
+    return await db.select().from(supportTickets)
+      .where(eq(supportTickets.userId, userId))
+      .orderBy(desc(supportTickets.createdAt));
+  }
+
+  async createSupportTicket(insertTicket: InsertSupportTicket): Promise<SupportTicket> {
+    const [ticket] = await db.insert(supportTickets).values(insertTicket).returning();
+    return ticket;
+  }
+
+  async getPriceChangeRequestsByBarber(barberId: string): Promise<PriceChangeRequest[]> {
+    return await db.select().from(priceChangeRequests)
+      .where(eq(priceChangeRequests.barberId, barberId))
+      .orderBy(desc(priceChangeRequests.createdAt));
+  }
+
+  async createPriceChangeRequest(insertRequest: InsertPriceChangeRequest): Promise<PriceChangeRequest> {
+    const [request] = await db.insert(priceChangeRequests).values(insertRequest).returning();
+    return request;
   }
 }
 

@@ -28,6 +28,9 @@ import {
   CheckCircle,
   Settings,
   Loader2,
+  DollarSign,
+  Scissors,
+  HeadphonesIcon,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -239,6 +242,47 @@ export default function BarberDashboard() {
       </header>
 
       <main className="px-4 py-6 space-y-6">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <DollarSign className="h-4 w-4 text-primary" />
+              <span className="font-medium">{t('currentPrices')}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="bg-muted rounded-lg p-3 text-center">
+                <Scissors className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">{t('haircut')}</p>
+                <p className="font-semibold text-lg">${user?.barber?.haircutPrice || '0'}</p>
+              </div>
+              <div className="bg-muted rounded-lg p-3 text-center">
+                <Scissors className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">{t('beardTrim')}</p>
+                <p className="font-semibold text-lg">${user?.barber?.beardPrice || '0'}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate('/price-change-request')}
+                data-testid="button-request-price-change"
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                {t('requestPriceChange')}
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate('/support')}
+                data-testid="button-support-center"
+              >
+                <HeadphonesIcon className="h-4 w-4 mr-2" />
+                {t('support')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {pendingBookings.length > 0 && (
           <Card className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
             <CardContent className="p-4">

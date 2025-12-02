@@ -22,6 +22,10 @@ interface User {
     isApproved: boolean | null;
     rating: string | null;
     reviewCount: number | null;
+    shopName: string | null;
+    phone: string | null;
+    haircutPrice: string | null;
+    beardPrice: string | null;
   } | null;
 }
 

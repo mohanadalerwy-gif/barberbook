@@ -1,0 +1,72 @@
+I need you to update the barber booking application with the following REQUIRED changes.
+Do NOT skip any item.
+
+==============================
+1) Enable Profile Editing for Users and Barbers
+==============================
+Both customers and barbers MUST be able to edit ONLY:
+- Profile Name
+- Profile Picture
+
+Rules:
+- The phone number must NOT be editable.
+- Update database fields accordingly.
+- Add a simple profile edit screen for both customer and barber dashboards.
+
+==============================
+2) Barber Cannot Change Service Prices Directly
+==============================
+Remove all inputs that allow barbers to change haircut or beard prices.
+Prices must be READ-ONLY for barbers after registration.
+
+==============================
+3) Add “Request Price Change” Feature for Barbers
+==============================
+Create a new screen/button inside barber dashboard:
+
+Button Label: “Request Price Change”
+
+When the barber taps the button:
+- A form appears with:
+  - New haircut price (input)
+  - New beard price (input)
+  - Notes (optional text)
+- Create a ticket in the database with:
+  - barberID
+  - old prices
+  - requested new prices
+  - status (pending / approved / rejected)
+  - timestamp
+
+Barber cannot change prices until support approves manually.
+
+==============================
+4) Add Support Center (for both users and barbers)
+==============================
+Add a new section called “Support Center”
+
+Inside Support Center:
+- “Submit Ticket”
+- “My Tickets”
+
+Ticket form should include:
+- Category (Price Change / Technical Issue / General Question)
+- Message text
+- Optional photo upload
+- Auto-save userID or barberID
+- Ticket status
+
+Support staff dashboard is not required now, only ticket creation + listing for the user.
+
+==============================
+5) UI Requirements
+==============================
+- Add a Support button in the main menu for both customer and barber.
+- Tickets must appear sorted by latest date.
+- Status must be visually clear (Pending - Approved - Rejected).
+
+==============================
+6) DO NOT modify any working logic outside these requirements
+==============================
+
+Apply ALL changes carefully.

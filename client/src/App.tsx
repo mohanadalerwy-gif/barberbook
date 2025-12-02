@@ -13,9 +13,12 @@ import BookByBarberPage from "@/pages/BookByBarberPage";
 import NearbyPage from "@/pages/NearbyPage";
 import BarberProfilePage from "@/pages/BarberProfilePage";
 import ProfilePage from "@/pages/ProfilePage";
+import ProfileEditPage from "@/pages/ProfileEditPage";
 import SettingsPage from "@/pages/SettingsPage";
 import BarberRegisterPage from "@/pages/BarberRegisterPage";
 import BarberDashboard from "@/pages/BarberDashboard";
+import SupportCenterPage from "@/pages/SupportCenterPage";
+import PriceChangeRequestPage from "@/pages/PriceChangeRequestPage";
 
 function Router() {
   useEffect(() => {
@@ -33,9 +36,12 @@ function Router() {
       <Route path="/nearby" component={NearbyPage} />
       <Route path="/barber/:id" component={BarberProfilePage} />
       <Route path="/profile" component={ProfilePage} />
+      <Route path="/profile/edit" component={ProfileEditPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/barber-register" component={BarberRegisterPage} />
       <Route path="/barber-dashboard" component={BarberDashboard} />
+      <Route path="/support" component={SupportCenterPage} />
+      <Route path="/price-change-request" component={PriceChangeRequestPage} />
       <Route component={NotFound} />
     </Switch>
   );

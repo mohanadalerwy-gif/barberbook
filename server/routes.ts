@@ -2,7 +2,15 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertBookingSchema, insertBarberSchema, insertServiceSchema, insertWorkingHoursSchema } from "@shared/schema";
+import { 
+  insertBookingSchema, 
+  insertBarberSchema, 
+  insertServiceSchema, 
+  insertWorkingHoursSchema, 
+  updateUserProfileSchema,
+  createSupportTicketInputSchema,
+  createPriceChangeRequestInputSchema
+} from "@shared/schema";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -28,8 +36,17 @@ export async function registerRoutes(
   app.patch('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { phone, role } = req.body;
-      const user = await storage.updateUser(userId, { phone, role });
+      
+      const parseResult = updateUserProfileSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid input", 
+          errors: parseResult.error.flatten().fieldErrors 
+        });
+      }
+      
+      const { firstName, lastName, profileImageUrl } = parseResult.data;
+      const user = await storage.updateUser(userId, { firstName, lastName, profileImageUrl });
       res.json(user);
     } catch (error) {
       console.error("Error updating user:", error);
@@ -496,6 +513,101 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating booking status:", error);
       res.status(500).json({ message: "Failed to update booking status" });
+    }
+  });
+
+  app.get('/api/support-tickets', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const tickets = await storage.getSupportTicketsByUser(userId);
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+      res.status(500).json({ message: "Failed to fetch support tickets" });
+    }
+  });
+
+  app.post('/api/support-tickets', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      const parseResult = createSupportTicketInputSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid input", 
+          errors: parseResult.error.flatten().fieldErrors 
+        });
+      }
+
+      const { category, message, photoUrl } = parseResult.data;
+
+      const ticketData = {
+        userId,
+        category,
+        message,
+        photoUrl: photoUrl || null,
+        status: 'pending' as const,
+      };
+
+      const ticket = await storage.createSupportTicket(ticketData);
+      res.status(201).json(ticket);
+    } catch (error) {
+      console.error("Error creating support ticket:", error);
+      res.status(500).json({ message: "Failed to create support ticket" });
+    }
+  });
+
+  app.get('/api/price-change-requests', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const barber = await storage.getBarberByUserId(userId);
+
+      if (!barber) {
+        return res.status(403).json({ message: "Only barbers can view price change requests" });
+      }
+
+      const requests = await storage.getPriceChangeRequestsByBarber(barber.id);
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching price change requests:", error);
+      res.status(500).json({ message: "Failed to fetch price change requests" });
+    }
+  });
+
+  app.post('/api/price-change-requests', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const barber = await storage.getBarberByUserId(userId);
+
+      if (!barber) {
+        return res.status(403).json({ message: "Only barbers can request price changes" });
+      }
+
+      const parseResult = createPriceChangeRequestInputSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid input", 
+          errors: parseResult.error.flatten().fieldErrors 
+        });
+      }
+
+      const { newHaircutPrice, newBeardPrice, notes } = parseResult.data;
+
+      const requestData = {
+        barberId: barber.id,
+        oldHaircutPrice: barber.haircutPrice || '0',
+        oldBeardPrice: barber.beardPrice || '0',
+        newHaircutPrice: newHaircutPrice.toString(),
+        newBeardPrice: newBeardPrice.toString(),
+        notes: notes || null,
+        status: 'pending' as const,
+      };
+
+      const priceRequest = await storage.createPriceChangeRequest(requestData);
+      res.status(201).json(priceRequest);
+    } catch (error) {
+      console.error("Error creating price change request:", error);
+      res.status(500).json({ message: "Failed to create price change request" });
     }
   });
 
