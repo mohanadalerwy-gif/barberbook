@@ -1,24 +1,43 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
-import { 
-  insertBookingSchema, 
-  insertBarberSchema, 
-  insertServiceSchema, 
-  insertWorkingHoursSchema, 
+import {
+  insertBookingSchema,
+  insertBarberSchema,
+  insertServiceSchema,
+  insertWorkingHoursSchema,
   updateUserProfileSchema,
   createSupportTicketInputSchema,
   createPriceChangeRequestInputSchema
 } from "@shared/schema";
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many requests, please try again later." },
+});
+
+const bookingLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many booking requests, please wait before trying again." },
+});
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   await setupAuth(app);
+
+  app.use("/api", apiLimiter);
 
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
@@ -396,13 +415,19 @@ export async function registerRoutes(
     }
   });
 
-  app.post('/api/bookings', isAuthenticated, async (req: any, res) => {
+  app.post('/api/bookings', bookingLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      const { serviceIds, ...bodyRest } = req.body;
 
       const result = insertBookingSchema.safeParse({
-        ...req.body,
+        ...bodyRest,
         customerId: userId,
+        // Multi-service: first ID becomes primary serviceId, all stored as JSON
+        ...(Array.isArray(serviceIds) && serviceIds.length > 0 && {
+          serviceId: bodyRest.serviceId || serviceIds[0],
+          serviceIds: JSON.stringify(serviceIds),
+        }),
       });
 
       if (!result.success) {
@@ -457,20 +482,28 @@ export async function registerRoutes(
           const barber = await storage.getBarber(booking.barberId);
           const barberUser = barber ? await storage.getUser(barber.userId) : null;
           const customer = await storage.getUser(booking.customerId);
-          const service = await storage.getService(booking.serviceId);
+
+          // Resolve all service IDs (multi-service support)
+          const allServiceIds: string[] = booking.serviceIds
+            ? JSON.parse(booking.serviceIds)
+            : [booking.serviceId];
+          const allServices = await Promise.all(allServiceIds.map(id => storage.getService(id)));
 
           return {
             ...booking,
-            barberName: barberUser 
-              ? [barberUser.firstName, barberUser.lastName].filter(Boolean).join(' ') 
+            barberName: barberUser
+              ? [barberUser.firstName, barberUser.lastName].filter(Boolean).join(' ')
               : 'Unknown',
-            customerName: customer 
-              ? [customer.firstName, customer.lastName].filter(Boolean).join(' ') 
+            barberAddress: barber?.address || '',
+            barberLat: barber?.lat || null,
+            barberLng: barber?.lng || null,
+            customerName: customer
+              ? [customer.firstName, customer.lastName].filter(Boolean).join(' ')
               : 'Unknown',
             customerPhone: customer?.phone,
-            serviceName: service?.name || 'Unknown',
-            duration: service?.duration || 0,
-            price: service ? parseFloat(service.price) : 0,
+            serviceName: allServices.filter(Boolean).map(s => s!.name).join(' + ') || 'Unknown',
+            duration: allServices.reduce((sum, s) => sum + (s?.duration || 0), 0),
+            price: allServices.reduce((sum, s) => sum + parseFloat(s?.price || '0'), 0),
           };
         })
       );
@@ -515,6 +548,47 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating booking status:", error);
       res.status(500).json({ message: "Failed to update booking status" });
+    }
+  });
+
+  app.post('/api/bookings/:id/review', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { rating, review } = req.body;
+      console.log('[review] received', { bookingId: req.params.id, userId, rating, review });
+
+      if (!rating || !Number.isInteger(rating) || rating < 1 || rating > 5) {
+        console.log('[review] validation failed', { rating });
+        return res.status(400).json({ message: "Rating must be an integer between 1 and 5" });
+      }
+
+      const booking = await storage.getBooking(req.params.id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      if (booking.customerId !== userId) {
+        console.log('[review] unauthorized', { customerId: booking.customerId, userId });
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      if (booking.status !== 'completed') {
+        console.log('[review] not completed', { status: booking.status });
+        return res.status(400).json({ message: "Can only review completed bookings" });
+      }
+      if (booking.rating !== null && booking.rating !== undefined) {
+        console.log('[review] already reviewed', { rating: booking.rating });
+        return res.status(409).json({ message: "Booking already reviewed" });
+      }
+
+      const updated = await storage.saveBookingReview(req.params.id, rating, review || '');
+      console.log('[review] saved', { id: updated?.id, rating: updated?.rating });
+
+      await storage.updateBarberRating(booking.barberId);
+      console.log('[review] barber rating updated', { barberId: booking.barberId });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error saving review:", error);
+      res.status(500).json({ message: "Failed to save review" });
     }
   });
 
@@ -717,6 +791,185 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error searching for public object:", error);
       return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Admin routes
+  app.get('/api/admin/stats', isAdmin, async (_req, res) => {
+    try {
+      const [bookingStats, revenueStats] = await Promise.all([
+        storage.getBookingStats(),
+        storage.getRevenueStats(),
+      ]);
+      res.json({ ...bookingStats, ...revenueStats });
+    } catch (error) {
+      console.error("Error fetching admin stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  app.get('/api/admin/barbers/:id/reviews', isAdmin, async (req, res) => {
+    try {
+      const reviews = await storage.getBarberReviews(req.params.id);
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error fetching barber reviews:", error);
+      res.status(500).json({ message: "Failed to fetch reviews" });
+    }
+  });
+
+  app.get('/api/admin/barbers', isAdmin, async (_req, res) => {
+    try {
+      const barbers = await storage.getAllBarbersAdmin();
+      res.json(barbers);
+    } catch (error) {
+      console.error("Error fetching admin barbers:", error);
+      res.status(500).json({ message: "Failed to fetch barbers" });
+    }
+  });
+
+  app.patch('/api/admin/barbers/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isApproved } = req.body;
+      if (typeof isApproved !== 'boolean') {
+        return res.status(400).json({ message: "isApproved must be a boolean" });
+      }
+      const barber = await storage.updateBarber(id, { isApproved });
+      if (!barber) return res.status(404).json({ message: "Barber not found" });
+      res.json(barber);
+    } catch (error) {
+      console.error("Error updating barber approval:", error);
+      res.status(500).json({ message: "Failed to update barber" });
+    }
+  });
+
+  app.get('/api/admin/support-tickets', isAdmin, async (_req, res) => {
+    try {
+      const tickets = await storage.getAllSupportTickets();
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching admin tickets:", error);
+      res.status(500).json({ message: "Failed to fetch tickets" });
+    }
+  });
+
+  app.get('/api/admin/users', isAdmin, async (_req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      res.json(allUsers.map(u => ({ ...u, passwordHash: undefined })));
+    } catch (error) {
+      console.error("Error fetching admin users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.patch('/api/admin/support-tickets/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      if (!['pending', 'approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      const ticket = await storage.updateTicketStatus(id, status);
+      if (!ticket) return res.status(404).json({ message: "Ticket not found" });
+      res.json(ticket);
+    } catch (error) {
+      console.error("Error updating ticket status:", error);
+      res.status(500).json({ message: "Failed to update ticket" });
+    }
+  });
+
+  app.patch('/api/admin/users/:id/role', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { role } = req.body;
+      if (!['customer', 'barber', 'admin'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      const updated = await storage.updateUser(id, { role });
+      if (!updated) return res.status(404).json({ message: "User not found" });
+      res.json({ id: updated.id, email: updated.email, role: updated.role });
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update role" });
+    }
+  });
+
+  app.get('/api/admin/price-change-requests', isAdmin, async (_req, res) => {
+    try {
+      const requests = await storage.getAllPriceChangeRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching admin price change requests:", error);
+      res.status(500).json({ message: "Failed to fetch price change requests" });
+    }
+  });
+
+  app.patch('/api/admin/price-change-requests/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      if (!['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      const request = await storage.getPriceChangeRequest(id);
+      if (!request) return res.status(404).json({ message: "Price change request not found" });
+      if (request.status !== 'pending') {
+        return res.status(400).json({ message: "Request has already been processed" });
+      }
+
+      const updated = await storage.updatePriceChangeRequestStatus(id, status);
+
+      if (status === 'approved') {
+        await storage.updateBarber(request.barberId, {
+          haircutPrice: request.newHaircutPrice,
+          beardPrice: request.newBeardPrice,
+        });
+        const barberServices = await storage.getServices(request.barberId);
+        await Promise.all(barberServices.map(service => {
+          const name = service.name.toLowerCase();
+          if (name.includes('haircut')) return storage.updateService(service.id, { price: request.newHaircutPrice });
+          if (name.includes('beard')) return storage.updateService(service.id, { price: request.newBeardPrice });
+          return Promise.resolve();
+        }));
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating price change request:", error);
+      res.status(500).json({ message: "Failed to update price change request" });
+    }
+  });
+
+  app.post('/api/admin/set-role', async (req: any, res) => {
+    try {
+      const { email, role } = req.body;
+      if (!email || !role) return res.status(400).json({ message: "email and role are required" });
+      if (!['customer', 'barber', 'admin'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+
+      const allUsers = await storage.getAllUsers();
+      const adminExists = allUsers.some(u => u.role === 'admin');
+
+      if (adminExists) {
+        if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+        const currentUser = await storage.getUser(req.user.claims.sub);
+        if (!currentUser || currentUser.role !== 'admin') {
+          return res.status(403).json({ message: "Forbidden" });
+        }
+      }
+
+      const target = await storage.getUserByEmail(email.toLowerCase());
+      if (!target) return res.status(404).json({ message: "User not found" });
+
+      const updated = await storage.updateUser(target.id, { role });
+      res.json({ id: updated?.id, email: updated?.email, role: updated?.role });
+    } catch (error) {
+      console.error("Error setting role:", error);
+      res.status(500).json({ message: "Failed to set role" });
     }
   });
 

@@ -17,10 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { 
-  ArrowLeft, 
-  Calendar, 
-  Clock, 
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
   User,
   Phone,
   Check,
@@ -28,14 +28,12 @@ import {
   CheckCircle,
   Settings,
   Loader2,
-  DollarSign,
-  Scissors,
-  HeadphonesIcon,
+  TrendingUp,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { format, parseISO, isToday, isFuture } from 'date-fns';
+import { format, parseISO, isToday, isFuture, isSameMonth } from 'date-fns';
 
 interface Booking {
   id: string;
@@ -93,6 +91,7 @@ export default function BarberDashboard() {
   const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({
     queryKey: ['/api/bookings'],
     enabled: isAuthenticated && user?.role === 'barber',
+    refetchInterval: 30_000,
   });
 
   const { data: workingHoursData, isLoading: hoursLoading } = useQuery<WorkingHoursData[]>({
@@ -192,13 +191,60 @@ export default function BarberDashboard() {
     saveHoursMutation.mutate(hours);
   };
 
-  const todayBookings = bookings.filter(b => 
+  const todayBookings = bookings.filter(b =>
     isToday(parseISO(b.date)) && b.status !== 'declined' && b.status !== 'cancelled'
   );
-  const upcomingBookings = bookings.filter(b => 
+  const upcomingBookings = bookings.filter(b =>
     isFuture(parseISO(b.date)) && !isToday(parseISO(b.date)) && b.status !== 'declined' && b.status !== 'cancelled'
   );
   const pendingBookings = bookings.filter(b => b.status === 'pending');
+
+  const completedBookings = bookings.filter(b => b.status === 'completed');
+  const now = new Date();
+
+  const todayEarnings = completedBookings
+    .filter(b => isToday(parseISO(b.date)))
+    .reduce((sum, b) => sum + b.price, 0);
+
+  const monthEarnings = completedBookings
+    .filter(b => isSameMonth(parseISO(b.date), now))
+    .reduce((sum, b) => sum + b.price, 0);
+
+  const totalEarnings = completedBookings.reduce((sum, b) => sum + b.price, 0);
+
+  const earningsByDay = completedBookings.reduce((acc, b) => {
+    const day = b.date.split('T')[0];
+    acc[day] = (acc[day] || 0) + b.price;
+    return acc;
+  }, {} as Record<string, number>);
+  const bestDayEarnings = Object.values(earningsByDay).length > 0
+    ? Math.max(...Object.values(earningsByDay))
+    : 0;
+
+  const earningsByMonth = completedBookings.reduce((acc, b) => {
+    const month = b.date.substring(0, 7);
+    acc[month] = (acc[month] || 0) + b.price;
+    return acc;
+  }, {} as Record<string, number>);
+  const bestMonthEarnings = Object.values(earningsByMonth).length > 0
+    ? Math.max(...Object.values(earningsByMonth))
+    : 0;
+
+  const todayProgressPct = bestDayEarnings > 0 ? Math.min(100, Math.round((todayEarnings / bestDayEarnings) * 100)) : 0;
+  const monthProgressPct = bestMonthEarnings > 0 ? Math.min(100, Math.round((monthEarnings / bestMonthEarnings) * 100)) : 0;
+
+  const actionableBookings = bookings.filter(b => ['confirmed', 'completed', 'declined'].includes(b.status));
+  const acceptedBookings = bookings.filter(b => ['confirmed', 'completed'].includes(b.status));
+  const acceptanceRate = actionableBookings.length > 0
+    ? Math.round((acceptedBookings.length / actionableBookings.length) * 100)
+    : 0;
+
+  const motivationalLabel = (() => {
+    if (todayProgressPct >= 100) return t('newRecord');
+    if (todayProgressPct >= 80) return t('almostThere');
+    if (todayProgressPct >= 40) return t('greatProgress');
+    return t('keepPushing');
+  })();
 
   if (authLoading) {
     return (
@@ -242,55 +288,109 @@ export default function BarberDashboard() {
       </header>
 
       <main className="px-4 py-6 space-y-6">
+        {/* Earnings Stats */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <DollarSign className="h-4 w-4 text-primary" />
-              <span className="font-medium">{t('currentPrices')}</span>
+          <CardContent className="p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <span className="font-semibold">{t('myEarnings')}</span>
+              <span className="text-xs text-muted-foreground ml-auto">{t('completedJobs')}</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="bg-muted rounded-lg p-3 text-center">
-                <Scissors className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">{t('haircut')}</p>
-                <p className="font-semibold text-lg">${user?.barber?.haircutPrice || '0'}</p>
+
+            {/* Today + This Month */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">{t('todayEarnings')}</p>
+                <p className="text-2xl font-bold text-primary">${todayEarnings}</p>
+                <div className="space-y-1">
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-700"
+                      style={{ width: `${todayProgressPct}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {todayProgressPct}% {t('ofBestDay')}
+                  </p>
+                </div>
               </div>
-              <div className="bg-muted rounded-lg p-3 text-center">
-                <Scissors className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">{t('beardTrim')}</p>
-                <p className="font-semibold text-lg">${user?.barber?.beardPrice || '0'}</p>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">{t('monthEarnings')}</p>
+                <p className="text-2xl font-bold">${monthEarnings}</p>
+                <div className="space-y-1">
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 rounded-full transition-all duration-700"
+                      style={{ width: `${monthProgressPct}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {monthProgressPct}% {t('ofBestMonth')}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => navigate('/price-change-request')}
-                data-testid="button-request-price-change"
-              >
-                <DollarSign className="h-4 w-4 mr-2" />
-                {t('requestPriceChange')}
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => navigate('/support')}
-                data-testid="button-support-center"
-              >
-                <HeadphonesIcon className="h-4 w-4 mr-2" />
-                {t('support')}
-              </Button>
+
+            {/* Motivational message */}
+            {completedBookings.length > 0 && (
+              <p className="text-center text-sm font-medium text-primary">{motivationalLabel}</p>
+            )}
+
+            {/* All-time + Acceptance Rate */}
+            <div className="flex items-center justify-between pt-2 border-t">
+              <div>
+                <p className="text-xs text-muted-foreground">{t('allTimeEarnings')}</p>
+                <p className="font-semibold">${totalEarnings}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">{t('acceptanceRate')}</p>
+                <p className="font-semibold">
+                  {actionableBookings.length > 0 ? `${acceptanceRate}%` : '—'}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {pendingBookings.length > 0 && (
+        {bookingsLoading && (
+          <Card className="border-amber-500/30">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2 mb-3">
+                <Skeleton className="h-4 w-4 rounded" />
+                <Skeleton className="h-4 w-36" />
+              </div>
+              {[1, 2].map(i => (
+                <div key={i} className="bg-muted rounded-lg p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-44" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Skeleton className="h-8 w-8 rounded" />
+                      <Skeleton className="h-8 w-8 rounded" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {!bookingsLoading && pendingBookings.length > 0 && (
           <Card className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Clock className="h-4 w-4 text-amber-600" />
                 <span className="font-medium text-amber-800 dark:text-amber-400">
-                  {pendingBookings.length} {t('pendingRequests')}
+                  {t('pendingRequests')}
                 </span>
+                <div className="relative inline-flex items-center ml-1">
+                  <Badge className="bg-amber-500 text-white font-bold px-2.5 z-10 relative">
+                    {pendingBookings.length}
+                  </Badge>
+                  <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-75" />
+                </div>
               </div>
               <div className="space-y-3">
                 {pendingBookings.map((booking) => (
@@ -344,11 +444,26 @@ export default function BarberDashboard() {
 
           <TabsContent value="today" className="mt-4 space-y-3">
             {bookingsLoading ? (
-              <Card>
-                <CardContent className="py-6">
-                  <Skeleton className="h-16 w-full" />
-                </CardContent>
-              </Card>
+              [1, 2].map(i => (
+                <Card key={i}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </div>
+                    <div className="mt-3 pt-3 border-t flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-28" />
+                        <Skeleton className="h-3 w-36" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
             ) : todayBookings.length > 0 ? (
               todayBookings.map((booking) => (
                 <BookingCard 
@@ -370,14 +485,34 @@ export default function BarberDashboard() {
 
           <TabsContent value="upcoming" className="mt-4 space-y-3">
             {bookingsLoading ? (
-              <Card>
-                <CardContent className="py-6">
-                  <Skeleton className="h-16 w-full" />
-                </CardContent>
-              </Card>
+              [1, 2].map(i => (
+                <Card key={i}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </div>
+                    <div className="mt-3 pt-3 border-t">
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-28" />
+                        <Skeleton className="h-3 w-36" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
             ) : upcomingBookings.length > 0 ? (
               upcomingBookings.map((booking) => (
-                <BookingCard key={booking.id} booking={booking} />
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  onComplete={handleComplete}
+                  isUpdating={updateStatusMutation.isPending}
+                />
               ))
             ) : (
               <Card>
@@ -493,7 +628,7 @@ function BookingCard({
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
               <User className="h-5 w-5 text-muted-foreground" />
             </div>
             <div>
@@ -506,36 +641,38 @@ function BookingCard({
               )}
             </div>
           </div>
-          <Badge 
-            variant="secondary"
-            className={
-              booking.status === 'confirmed' 
-                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
-                : ''
-            }
-          >
-            {booking.status === 'confirmed' && <CheckCircle className="h-3 w-3 mr-1" />}
-            {t(booking.status)}
-          </Badge>
-        </div>
-        
-        <div className="mt-3 pt-3 border-t flex items-center justify-between">
-          <div className="text-sm">
-            <p className="font-medium">{booking.serviceName}</p>
-            <p className="text-muted-foreground">
-              {format(parseISO(booking.date), 'EEE, MMM d')} {t('at')} {booking.time}
-            </p>
-          </div>
-          {isConfirmed && onComplete && (
-            <Button 
-              size="sm"
-              onClick={() => onComplete(booking)}
-              disabled={isUpdating}
-              data-testid={`button-complete-${booking.id}`}
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <Badge
+              variant="secondary"
+              className={
+                booking.status === 'confirmed'
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                  : ''
+              }
             >
-              {t('complete')}
-            </Button>
-          )}
+              {booking.status === 'confirmed' && <CheckCircle className="h-3 w-3 mr-1" />}
+              {t(booking.status)}
+            </Badge>
+            {isConfirmed && onComplete && (
+              <Button
+                size="sm"
+                className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => onComplete(booking)}
+                disabled={isUpdating}
+                data-testid={`button-complete-${booking.id}`}
+              >
+                <CheckCircle className="h-3 w-3 mr-1" />
+                {t('complete')}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-3 pt-3 border-t text-sm">
+          <p className="font-medium">{booking.serviceName}</p>
+          <p className="text-muted-foreground">
+            {format(parseISO(booking.date), 'EEE, MMM d')} {t('at')} {booking.time}
+          </p>
         </div>
       </CardContent>
     </Card>

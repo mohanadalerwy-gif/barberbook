@@ -19,6 +19,8 @@ import BarberRegisterPage from "@/pages/BarberRegisterPage";
 import BarberDashboard from "@/pages/BarberDashboard";
 import SupportCenterPage from "@/pages/SupportCenterPage";
 import PriceChangeRequestPage from "@/pages/PriceChangeRequestPage";
+import LoginPage from "@/pages/LoginPage";
+import AdminPage from "@/pages/AdminPage";
 
 function Router() {
   useEffect(() => {
@@ -42,6 +44,8 @@ function Router() {
       <Route path="/barber-dashboard" component={BarberDashboard} />
       <Route path="/support" component={SupportCenterPage} />
       <Route path="/price-change-request" component={PriceChangeRequestPage} />
+      <Route path="/login" component={LoginPage} />
+      <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>
   );

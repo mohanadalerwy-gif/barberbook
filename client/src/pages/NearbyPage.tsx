@@ -48,6 +48,7 @@ export default function NearbyPage() {
       return res.json();
     },
     enabled: !!userLocation,
+    refetchInterval: 30_000,
   });
 
   return (

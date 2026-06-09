@@ -42,7 +42,7 @@ export default function BarberProfilePage() {
   const params = useParams<{ id: string }>();
   const { isAuthenticated } = useAuth();
 
-  const [selectedService, setSelectedService] = useState<ServiceType | null>(null);
+  const [selectedServices, setSelectedServices] = useState<ServiceType[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [step, setStep] = useState<'service' | 'time' | 'confirm' | 'success'>('service');
@@ -52,6 +52,23 @@ export default function BarberProfilePage() {
     document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
   }, [i18n.language]);
 
+  const totalPrice = useMemo(
+    () => selectedServices.reduce((sum, s) => sum + parseFloat(String(s.price)), 0),
+    [selectedServices]
+  );
+  const totalDuration = useMemo(
+    () => selectedServices.reduce((sum, s) => sum + s.duration, 0),
+    [selectedServices]
+  );
+
+  const toggleService = (service: ServiceType) => {
+    setSelectedServices(prev =>
+      prev.some(s => s.id === service.id)
+        ? prev.filter(s => s.id !== service.id)
+        : [...prev, service]
+    );
+  };
+
   const { data: barber, isLoading } = useQuery<BarberData>({
     queryKey: ['/api/barbers', params.id],
     queryFn: async () => {
@@ -60,6 +77,7 @@ export default function BarberProfilePage() {
       return res.json();
     },
     enabled: !!params.id,
+    refetchInterval: 30_000,
   });
 
   const { data: bookedSlots = [] } = useQuery<string[]>({
@@ -70,6 +88,7 @@ export default function BarberProfilePage() {
       return res.json();
     },
     enabled: !!params.id,
+    refetchInterval: 30_000,
   });
 
   const createBookingMutation = useMutation({
@@ -86,9 +105,7 @@ export default function BarberProfilePage() {
           description: "You need to sign in to book an appointment.",
           variant: "destructive",
         });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
+        setTimeout(() => { window.location.href = "/api/login"; }, 500);
         return;
       }
       toast({
@@ -99,6 +116,30 @@ export default function BarberProfilePage() {
     },
   });
 
+  const daysOffSet = useMemo(() => {
+    if (!barber?.workingHours?.length) return new Set<string>();
+    return new Set(
+      barber.workingHours.filter((h: any) => !h.isWorking).map((h: any) => h.day as string)
+    );
+  }, [barber?.workingHours]);
+
+  // If the current selectedDate falls on a day off (e.g. today is Friday and barber doesn't work Fridays),
+  // advance to the next working day so the picker never opens on an invalid state.
+  useEffect(() => {
+    if (!barber?.workingHours?.length) return;
+    if (daysOffSet.has(format(selectedDate, 'EEEE'))) {
+      for (let i = 1; i <= 14; i++) {
+        const candidate = addDays(new Date(), i);
+        if (!daysOffSet.has(format(candidate, 'EEEE'))) {
+          setSelectedDate(candidate);
+          setSelectedTime(null);
+          break;
+        }
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [barber?.workingHours]);
+
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
   }, []);
@@ -108,11 +149,7 @@ export default function BarberProfilePage() {
     for (let hour = 9; hour < 18; hour++) {
       for (let min = 0; min < 60; min += 30) {
         const time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
-        slots.push({
-          id: `slot-${time}`,
-          time,
-          available: !bookedSlots.includes(time),
-        });
+        slots.push({ id: `slot-${time}`, time, available: !bookedSlots.includes(time) });
       }
     }
     return slots;
@@ -165,23 +202,20 @@ export default function BarberProfilePage() {
         description: "Please sign in to book an appointment.",
         variant: "destructive",
       });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
+      setTimeout(() => { window.location.href = "/api/login"; }, 500);
       return;
     }
 
     const id = generateBookingId();
-    
     try {
       await createBookingMutation.mutateAsync({
         bookingId: id,
         barberId: barber.id,
-        serviceId: selectedService?.id,
+        serviceId: selectedServices[0]?.id,
+        serviceIds: selectedServices.map(s => s.id),
         date: format(selectedDate, 'yyyy-MM-dd'),
         time: selectedTime,
       });
-      
       setBookingId(id);
       setStep('success');
     } catch (error) {
@@ -190,6 +224,7 @@ export default function BarberProfilePage() {
   };
 
   if (step === 'success') {
+    const serviceLabel = selectedServices.map(s => s.name).join(' + ');
     return (
       <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
@@ -212,48 +247,41 @@ export default function BarberProfilePage() {
                 <p className="text-lg font-bold text-primary font-mono" data-testid="text-booking-id">{bookingId}</p>
               </div>
               <Separator />
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t('service')}</span>
-                <span className="font-medium">{selectedService?.name}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t('date')}</span>
-                <span className="font-medium">{format(selectedDate, 'EEE, MMM d, yyyy')}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t('time')}</span>
-                <span className="font-medium">{selectedTime}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t('total')}</span>
-                <span className="font-medium">${selectedService?.price}</span>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('service')}</span>
+                  <span className="font-medium text-right max-w-[60%]">{serviceLabel}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('date')}</span>
+                  <span className="font-medium">{format(selectedDate, 'EEE, MMM d, yyyy')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('time')}</span>
+                  <span className="font-medium">{selectedTime}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('total')}</span>
+                  <span className="font-medium">${totalPrice.toFixed(2)}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           <div className="space-y-3">
-            <Button 
+            <Button
               variant="outline"
-              className="w-full" 
+              className="w-full"
               onClick={() => openMapsApp({ lat: barber.lat, lng: barber.lng, name: barber.name })}
               data-testid="button-open-location"
             >
               <Navigation className="h-4 w-4 mr-2" />
               {t('openLocation')}
             </Button>
-            <Button 
-              className="w-full" 
-              onClick={() => navigate('/profile')}
-              data-testid="button-view-bookings"
-            >
+            <Button className="w-full" onClick={() => navigate('/profile')} data-testid="button-view-bookings">
               {t('viewMyBookings')}
             </Button>
-            <Button 
-              variant="outline"
-              className="w-full" 
-              onClick={() => navigate('/')}
-              data-testid="button-go-home"
-            >
+            <Button variant="outline" className="w-full" onClick={() => navigate('/')} data-testid="button-go-home">
               {t('backToHome')}
             </Button>
           </div>
@@ -268,9 +296,9 @@ export default function BarberProfilePage() {
     <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               if (step === 'time') setStep('service');
               else if (step === 'confirm') setStep('time');
@@ -289,6 +317,7 @@ export default function BarberProfilePage() {
       </header>
 
       <main className="px-4 py-6 space-y-6">
+        {/* Barber header card */}
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
@@ -313,41 +342,53 @@ export default function BarberProfilePage() {
           </CardContent>
         </Card>
 
+        {/* Step: service selection */}
         {step === 'service' && (
           <section className="space-y-3">
-            <h3 className="font-medium">{t('services')}</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">{t('services')}</h3>
+              <span className="text-xs text-muted-foreground">Select one or more</span>
+            </div>
+
             {barber.services && barber.services.length > 0 ? (
-              barber.services.map((service) => (
-                <Card 
-                  key={service.id}
-                  className={cn(
-                    "cursor-pointer transition-colors hover-elevate",
-                    selectedService?.id === service.id && "ring-2 ring-primary"
-                  )}
-                  onClick={() => setSelectedService(service)}
-                  data-testid={`service-${service.id}`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{service.name}</p>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span>{service.duration} {t('min')}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-semibold">${service.price}</span>
-                        {selectedService?.id === service.id && (
-                          <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
-                            <Check className="h-4 w-4 text-primary-foreground" />
+              barber.services.map((service) => {
+                const isSelected = selectedServices.some(s => s.id === service.id);
+                return (
+                  <Card
+                    key={service.id}
+                    className={cn(
+                      "cursor-pointer transition-colors hover-elevate",
+                      isSelected && "ring-2 ring-primary"
+                    )}
+                    onClick={() => toggleService(service)}
+                    data-testid={`service-${service.id}`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          {/* Checkbox indicator */}
+                          <div className={cn(
+                            "h-5 w-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+                            isSelected
+                              ? "bg-primary border-primary"
+                              : "border-muted-foreground/40"
+                          )}>
+                            {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
                           </div>
-                        )}
+                          <div>
+                            <p className="font-medium">{service.name}</p>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>{service.duration} {t('min')}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <span className="font-semibold shrink-0">${service.price}</span>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                );
+              })
             ) : (
               <Card>
                 <CardContent className="py-6 text-center text-muted-foreground">
@@ -356,9 +397,19 @@ export default function BarberProfilePage() {
               </Card>
             )}
 
-            <Button 
-              className="w-full mt-4" 
-              disabled={!selectedService}
+            {/* Live total summary */}
+            {selectedServices.length > 0 && (
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {selectedServices.length} service{selectedServices.length > 1 ? 's' : ''} &middot; {totalDuration} min
+                </span>
+                <span className="font-semibold">${totalPrice.toFixed(2)}</span>
+              </div>
+            )}
+
+            <Button
+              className="w-full mt-4"
+              disabled={selectedServices.length === 0}
               onClick={() => setStep('time')}
               data-testid="button-continue"
             >
@@ -367,27 +418,41 @@ export default function BarberProfilePage() {
           </section>
         )}
 
+        {/* Step: date & time selection */}
         {step === 'time' && (
           <section className="space-y-4">
             <div>
               <h3 className="font-medium mb-3">{t('selectDate')}</h3>
               <div className="flex gap-2 overflow-x-auto pb-2">
-                {weekDays.map((day) => (
-                  <button
-                    key={day.toISOString()}
-                    onClick={() => setSelectedDate(day)}
-                    className={cn(
-                      "flex flex-col items-center p-3 rounded-lg min-w-[60px] transition-colors",
-                      isSameDay(day, selectedDate) 
-                        ? "bg-primary text-primary-foreground" 
-                        : "bg-muted hover-elevate"
-                    )}
-                    data-testid={`date-${format(day, 'yyyy-MM-dd')}`}
-                  >
-                    <span className="text-xs opacity-70">{format(day, 'EEE')}</span>
-                    <span className="text-lg font-semibold">{format(day, 'd')}</span>
-                  </button>
-                ))}
+                {weekDays.map((day) => {
+                  const isOff = daysOffSet.has(format(day, 'EEEE'));
+                  const isSelected = isSameDay(day, selectedDate) && !isOff;
+                  return (
+                    <button
+                      key={day.toISOString()}
+                      disabled={isOff}
+                      onClick={() => {
+                        setSelectedDate(day);
+                        setSelectedTime(null);
+                      }}
+                      className={cn(
+                        "flex flex-col items-center p-3 rounded-lg min-w-[60px] transition-colors",
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : isOff
+                          ? "opacity-40 cursor-not-allowed bg-muted"
+                          : "bg-muted hover-elevate"
+                      )}
+                      data-testid={`date-${format(day, 'yyyy-MM-dd')}`}
+                    >
+                      <span className="text-xs opacity-70">{format(day, 'EEE')}</span>
+                      <span className="text-lg font-semibold">{format(day, 'd')}</span>
+                      {isOff && (
+                        <span className="text-xs leading-none opacity-70">{t('dayOff')}</span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -410,8 +475,8 @@ export default function BarberProfilePage() {
               </div>
             </div>
 
-            <Button 
-              className="w-full mt-4" 
+            <Button
+              className="w-full mt-4"
               disabled={!selectedTime}
               onClick={() => setStep('confirm')}
               data-testid="button-continue"
@@ -421,7 +486,8 @@ export default function BarberProfilePage() {
           </section>
         )}
 
-        {step === 'confirm' && selectedService && (
+        {/* Step: confirm */}
+        {step === 'confirm' && selectedServices.length > 0 && (
           <section className="space-y-4">
             <Card>
               <CardContent className="p-4 space-y-3">
@@ -432,10 +498,17 @@ export default function BarberProfilePage() {
                     <span className="text-muted-foreground">{t('barber')}</span>
                     <span className="font-medium">{barber.name}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('service')}</span>
-                    <span className="font-medium">{selectedService.name}</span>
-                  </div>
+
+                  {/* List each selected service */}
+                  {selectedServices.map((s, i) => (
+                    <div key={s.id} className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        {i === 0 ? t('service') : ''}
+                      </span>
+                      <span className="font-medium">{s.name} — ${s.price}</span>
+                    </div>
+                  ))}
+
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('date')}</span>
                     <span className="font-medium">{format(selectedDate, 'EEE, MMM d, yyyy')}</span>
@@ -446,12 +519,12 @@ export default function BarberProfilePage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('duration')}</span>
-                    <span className="font-medium">{selectedService.duration} {t('min')}</span>
+                    <span className="font-medium">{totalDuration} {t('min')}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between text-base">
                     <span className="font-medium">{t('total')}</span>
-                    <span className="font-bold">${selectedService.price}</span>
+                    <span className="font-bold">${totalPrice.toFixed(2)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -461,8 +534,8 @@ export default function BarberProfilePage() {
               {t('confirmAppointment')}
             </p>
 
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={handleConfirm}
               disabled={createBookingMutation.isPending}
               data-testid="button-confirm"

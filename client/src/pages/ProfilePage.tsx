@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation, useSearch } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,16 +11,15 @@ import BottomNav from '@/components/BottomNav';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { 
-  User as UserIcon, 
-  Calendar, 
-  Settings, 
+  User as UserIcon,
+  Calendar,
+  Settings,
   Clock,
   CheckCircle,
   Scissors,
   Edit,
-  HeadphonesIcon,
 } from 'lucide-react';
-import { format, parseISO, isPast } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 interface Booking {
   id: string;
@@ -31,7 +30,7 @@ interface Booking {
   serviceName: string;
   date: string;
   time: string;
-  status: 'pending' | 'confirmed' | 'declined' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'accepted' | 'declined' | 'completed' | 'cancelled';
   duration: number;
   price: number;
 }
@@ -42,10 +41,12 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({
     queryKey: ['/api/bookings'],
     enabled: isAuthenticated,
+    refetchInterval: 30_000,
   });
 
   useEffect(() => {
@@ -62,18 +63,20 @@ export default function ProfilePage() {
   }, [searchString, toast, t]);
 
   const handleLogin = () => {
-    window.location.href = '/api/login';
+    navigate('/login');
   };
 
-  const handleLogout = () => {
-    window.location.href = '/api/logout';
+  const handleLogout = async () => {
+    await fetch('/api/logout', { method: 'POST' });
+    await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+    navigate('/');
   };
 
   const upcomingBookings = bookings.filter(
-    b => !isPast(parseISO(b.date)) && (b.status === 'pending' || b.status === 'confirmed')
+    b => b.status === 'pending' || b.status === 'confirmed' || b.status === 'accepted'
   );
   const pastBookings = bookings.filter(
-    b => isPast(parseISO(b.date)) || b.status === 'completed'
+    b => b.status === 'completed' || b.status === 'cancelled' || b.status === 'declined'
   );
 
   if (authLoading) {
@@ -194,18 +197,6 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 gap-3">
-          <Button 
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => navigate('/support')}
-            data-testid="button-support-center"
-          >
-            <HeadphonesIcon className="h-4 w-4 mr-2" />
-            {t('supportCenter')}
-          </Button>
-        </div>
-
         {user.role === 'barber' && (
           <Button 
             className="w-full"
@@ -235,11 +226,25 @@ export default function ProfilePage() {
             {t('upcomingAppointments')}
           </h3>
           {bookingsLoading ? (
-            <Card>
-              <CardContent className="py-6">
-                <Skeleton className="h-16 w-full" />
-              </CardContent>
-            </Card>
+            <div className="space-y-3">
+              {[1, 2].map(i => (
+                <Card key={i}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-36" />
+                        <Skeleton className="h-3 w-28" />
+                        <Skeleton className="h-3 w-32" />
+                      </div>
+                      <div className="flex flex-col items-end space-y-2">
+                        <Skeleton className="h-5 w-20 rounded-full" />
+                        <Skeleton className="h-4 w-12" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : upcomingBookings.length > 0 ? (
             <div className="space-y-3">
               {upcomingBookings.map((booking) => (
@@ -261,11 +266,25 @@ export default function ProfilePage() {
             {t('pastAppointments')}
           </h3>
           {bookingsLoading ? (
-            <Card>
-              <CardContent className="py-6">
-                <Skeleton className="h-16 w-full" />
-              </CardContent>
-            </Card>
+            <div className="space-y-3">
+              {[1, 2].map(i => (
+                <Card key={i} className="opacity-70">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-36" />
+                        <Skeleton className="h-3 w-28" />
+                        <Skeleton className="h-3 w-32" />
+                      </div>
+                      <div className="flex flex-col items-end space-y-2">
+                        <Skeleton className="h-5 w-20 rounded-full" />
+                        <Skeleton className="h-4 w-12" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : pastBookings.length > 0 ? (
             <div className="space-y-3">
               {pastBookings.map((booking) => (

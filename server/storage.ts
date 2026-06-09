@@ -42,12 +42,25 @@ export interface IStorage {
   getBookingsByBarberAndDate(barberId: string, date: string): Promise<Booking[]>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBookingStatus(id: string, status: Booking['status']): Promise<Booking | undefined>;
+  saveBookingReview(id: string, rating: number, review: string): Promise<Booking | undefined>;
+  updateBarberRating(barberId: string): Promise<void>;
 
   getSupportTicketsByUser(userId: string): Promise<SupportTicket[]>;
+  getAllSupportTickets(): Promise<(SupportTicket & { userEmail: string | null; userName: string | null })[]>;
   createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket>;
 
+  getAllUsers(): Promise<User[]>;
+  getAllBarbersAdmin(): Promise<(Barber & { user: User })[]>;
+  getBookingStats(): Promise<{ total: number; today: number }>;
+  getRevenueStats(): Promise<{ totalRevenue: number; monthlyRevenue: number }>;
+  getBarberReviews(barberId: string): Promise<{ rating: number; review: string | null; customerName: string | null; date: string; createdAt: string | null }[]>;
+  updateTicketStatus(id: string, status: string): Promise<SupportTicket | undefined>;
+
   getPriceChangeRequestsByBarber(barberId: string): Promise<PriceChangeRequest[]>;
+  getPriceChangeRequest(id: string): Promise<PriceChangeRequest | undefined>;
   createPriceChangeRequest(request: InsertPriceChangeRequest): Promise<PriceChangeRequest>;
+  getAllPriceChangeRequests(): Promise<(PriceChangeRequest & { barberName: string; barberShopName: string | null })[]>;
+  updatePriceChangeRequestStatus(id: string, status: string): Promise<PriceChangeRequest | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -184,6 +197,7 @@ export class DatabaseStorage implements IStorage {
         role: row.user_role,
         authProvider: null,
         authProviderId: null,
+        passwordHash: null,
         createdAt: null,
         updatedAt: null,
       },
@@ -269,15 +283,141 @@ export class DatabaseStorage implements IStorage {
     return booking || undefined;
   }
 
+  async saveBookingReview(id: string, rating: number, review: string): Promise<Booking | undefined> {
+    const [booking] = await db.update(bookings).set({ rating, review }).where(eq(bookings.id, id)).returning();
+    return booking || undefined;
+  }
+
+  async updateBarberRating(barberId: string): Promise<void> {
+    const [result] = await db
+      .select({
+        avgRating: sql<number>`avg(${bookings.rating})`,
+        reviewCount: sql<number>`count(${bookings.rating})`,
+      })
+      .from(bookings)
+      .where(and(eq(bookings.barberId, barberId), sql`${bookings.rating} IS NOT NULL`));
+
+    const avg = result.avgRating != null ? parseFloat(result.avgRating.toString()).toFixed(1) : '0.0';
+    const count = Number(result.reviewCount) || 0;
+
+    await db.update(barbers).set({ rating: avg, reviewCount: count }).where(eq(barbers.id, barberId));
+  }
+
   async getSupportTicketsByUser(userId: string): Promise<SupportTicket[]> {
     return await db.select().from(supportTickets)
       .where(eq(supportTickets.userId, userId))
       .orderBy(desc(supportTickets.createdAt));
   }
 
+  async getAllSupportTickets(): Promise<(SupportTicket & { userEmail: string | null; userName: string | null })[]> {
+    const [tickets, allUsers] = await Promise.all([
+      db.select().from(supportTickets).orderBy(desc(supportTickets.createdAt)),
+      db.select().from(users),
+    ]);
+    const userMap = new Map(allUsers.map(u => [u.id, u]));
+    return tickets.map(ticket => {
+      const user = userMap.get(ticket.userId);
+      return {
+        ...ticket,
+        userEmail: user?.email ?? null,
+        userName: user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || null : null,
+      };
+    });
+  }
+
   async createSupportTicket(insertTicket: InsertSupportTicket): Promise<SupportTicket> {
     const [ticket] = await db.insert(supportTickets).values(insertTicket).returning();
     return ticket;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async getAllBarbersAdmin(): Promise<(Barber & { user: User })[]> {
+    const result = await db
+      .select()
+      .from(barbers)
+      .innerJoin(users, eq(barbers.userId, users.id))
+      .orderBy(desc(barbers.createdAt));
+    return result.map(row => ({ ...row.barbers, user: row.users }));
+  }
+
+  async getBookingStats(): Promise<{ total: number; today: number }> {
+    const today = new Date().toISOString().split('T')[0];
+    const [totalResult, todayResult] = await Promise.all([
+      db.select({ count: sql<number>`count(*)::int` }).from(bookings),
+      db.select({ count: sql<number>`count(*)::int` }).from(bookings).where(eq(bookings.date, today)),
+    ]);
+    return {
+      total: Number(totalResult[0]?.count ?? 0),
+      today: Number(todayResult[0]?.count ?? 0),
+    };
+  }
+
+  async getRevenueStats(): Promise<{ totalRevenue: number; monthlyRevenue: number }> {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const monthStart = `${year}-${month}-01`;
+    const lastDay = new Date(year, today.getMonth() + 1, 0).getDate();
+    const monthEnd = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+
+    const [totalResult, monthlyResult] = await Promise.all([
+      db.select({ revenue: sql<string>`COALESCE(SUM(${services.price}), 0)` })
+        .from(bookings)
+        .innerJoin(services, eq(bookings.serviceId, services.id))
+        .where(eq(bookings.status, 'completed')),
+      db.select({ revenue: sql<string>`COALESCE(SUM(${services.price}), 0)` })
+        .from(bookings)
+        .innerJoin(services, eq(bookings.serviceId, services.id))
+        .where(and(
+          eq(bookings.status, 'completed'),
+          sql`${bookings.date} >= ${monthStart}`,
+          sql`${bookings.date} <= ${monthEnd}`
+        )),
+    ]);
+
+    return {
+      totalRevenue: parseFloat(totalResult[0]?.revenue ?? '0'),
+      monthlyRevenue: parseFloat(monthlyResult[0]?.revenue ?? '0'),
+    };
+  }
+
+  async getBarberReviews(barberId: string): Promise<{ rating: number; review: string | null; customerName: string | null; date: string; createdAt: string | null }[]> {
+    const result = await db
+      .select({
+        rating: bookings.rating,
+        review: bookings.review,
+        date: bookings.date,
+        createdAt: bookings.createdAt,
+        firstName: users.firstName,
+        lastName: users.lastName,
+      })
+      .from(bookings)
+      .innerJoin(users, eq(bookings.customerId, users.id))
+      .where(and(
+        eq(bookings.barberId, barberId),
+        sql`${bookings.rating} IS NOT NULL`
+      ))
+      .orderBy(desc(bookings.createdAt));
+
+    return result.map(r => ({
+      rating: r.rating!,
+      review: r.review,
+      date: r.date,
+      createdAt: r.createdAt ? r.createdAt.toISOString() : null,
+      customerName: [r.firstName, r.lastName].filter(Boolean).join(' ') || null,
+    }));
+  }
+
+  async updateTicketStatus(id: string, status: string): Promise<SupportTicket | undefined> {
+    const [ticket] = await db
+      .update(supportTickets)
+      .set({ status: status as any, updatedAt: new Date() })
+      .where(eq(supportTickets.id, id))
+      .returning();
+    return ticket || undefined;
   }
 
   async getPriceChangeRequestsByBarber(barberId: string): Promise<PriceChangeRequest[]> {
@@ -289,6 +429,39 @@ export class DatabaseStorage implements IStorage {
   async createPriceChangeRequest(insertRequest: InsertPriceChangeRequest): Promise<PriceChangeRequest> {
     const [request] = await db.insert(priceChangeRequests).values(insertRequest).returning();
     return request;
+  }
+
+  async getPriceChangeRequest(id: string): Promise<PriceChangeRequest | undefined> {
+    const [request] = await db.select().from(priceChangeRequests).where(eq(priceChangeRequests.id, id));
+    return request || undefined;
+  }
+
+  async getAllPriceChangeRequests(): Promise<(PriceChangeRequest & { barberName: string; barberShopName: string | null })[]> {
+    const [requests, allBarbers, allUsers] = await Promise.all([
+      db.select().from(priceChangeRequests).orderBy(desc(priceChangeRequests.createdAt)),
+      db.select().from(barbers),
+      db.select().from(users),
+    ]);
+    const barberMap = new Map(allBarbers.map(b => [b.id, b]));
+    const userMap = new Map(allUsers.map(u => [u.id, u]));
+    return requests.map(req => {
+      const barber = barberMap.get(req.barberId);
+      const user = barber ? userMap.get(barber.userId) : undefined;
+      return {
+        ...req,
+        barberShopName: barber?.shopName ?? null,
+        barberName: user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Unknown' : 'Unknown',
+      };
+    });
+  }
+
+  async updatePriceChangeRequestStatus(id: string, status: string): Promise<PriceChangeRequest | undefined> {
+    const [request] = await db
+      .update(priceChangeRequests)
+      .set({ status: status as any, updatedAt: new Date() })
+      .where(eq(priceChangeRequests.id, id))
+      .returning();
+    return request || undefined;
   }
 }
 

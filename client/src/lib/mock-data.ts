@@ -182,5 +182,5 @@ export const mockWorkingHours: WorkingHours[] = [
 ];
 
 export const getNearbyBarbers = (maxDistance: number = 5): Barber[] => {
-  return mockBarbers.filter(b => b.distance <= maxDistance && b.isApproved);
+  return mockBarbers.filter(b => (b.distance ?? Infinity) <= maxDistance && b.isApproved);
 };

@@ -3,7 +3,7 @@ import { pgTable, text, varchar, integer, boolean, decimal, timestamp, pgEnum, j
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const userRoleEnum = pgEnum('user_role', ['customer', 'barber']);
+export const userRoleEnum = pgEnum('user_role', ['customer', 'barber', 'admin']);
 export const bookingStatusEnum = pgEnum('booking_status', ['pending', 'confirmed', 'declined', 'completed', 'cancelled']);
 export const ticketStatusEnum = pgEnum('ticket_status', ['pending', 'approved', 'rejected']);
 export const ticketCategoryEnum = pgEnum('ticket_category', ['price_change', 'technical_issue', 'general_question']);
@@ -28,6 +28,7 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull().default('customer'),
   authProvider: text("auth_provider"),
   authProviderId: text("auth_provider_id"),
+  passwordHash: text("password_hash"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -76,6 +77,9 @@ export const bookings = pgTable("bookings", {
   date: text("date").notNull(),
   time: text("time").notNull(),
   status: bookingStatusEnum("status").notNull().default('pending'),
+  serviceIds: text("service_ids"),
+  rating: integer("rating"),
+  review: text("review"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
