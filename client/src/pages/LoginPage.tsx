@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import i18n from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -36,7 +37,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const url = mode === 'login' ? '/api/login' : '/api/register';
-      const body: Record<string, string> = { email, password };
+      const body: Record<string, string> = { email, password, lang: i18n.language };
       if (mode === 'register') {
         if (firstName) body.firstName = firstName;
         if (lastName) body.lastName = lastName;
@@ -51,7 +52,18 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.message === 'EMAIL_NOT_VERIFIED' && data.userId) {
+          sessionStorage.setItem('pendingVerifyUserId', data.userId);
+          navigate('/verify-email');
+          return;
+        }
         setError(data.message ?? 'Something went wrong');
+        return;
+      }
+
+      if (data.requiresVerification) {
+        sessionStorage.setItem('pendingVerifyUserId', data.userId);
+        navigate('/verify-email');
         return;
       }
 

@@ -251,5 +251,22 @@
   "hide": "Hide",
   "show": "Show",
   "review": "review",
-  "reviews": "reviews"
+  "reviews": "reviews",
+  "otpTitle": "Verify your email",
+  "otpSubtitle": "We sent a 6-digit code to your email. Enter it below.",
+  "otpVerify": "Verify",
+  "otpEnterAll": "Please enter the 6-digit code",
+  "otpInvalid": "Incorrect code. Please try again.",
+  "otpExpired": "Code has expired. Please request a new one.",
+  "otpNoCode": "Didn't receive a code?",
+  "otpResend": "Resend code",
+  "otpResendIn": "Resend in {{seconds}}s",
+  "email": "Email",
+  "password": "Password",
+  "confirmPassword": "Confirm password",
+  "createAccount": "Create account",
+  "noAccount": "Don't have an account?",
+  "signUp": "Sign up",
+  "haveAccount": "Already have an account?",
+  "networkError": "Network error. Please try again."
 }

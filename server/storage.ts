@@ -1,5 +1,5 @@
-import { 
-  users, barbers, services, workingHours, bookings, supportTickets, priceChangeRequests,
+import {
+  users, barbers, services, workingHours, bookings, supportTickets, priceChangeRequests, emailVerifications,
   type User, type InsertUser, type UpsertUser,
   type Barber, type InsertBarber,
   type Service, type InsertService,
@@ -61,6 +61,10 @@ export interface IStorage {
   createPriceChangeRequest(request: InsertPriceChangeRequest): Promise<PriceChangeRequest>;
   getAllPriceChangeRequests(): Promise<(PriceChangeRequest & { barberName: string; barberShopName: string | null })[]>;
   updatePriceChangeRequestStatus(id: string, status: string): Promise<PriceChangeRequest | undefined>;
+
+  createEmailVerification(userId: string, code: string, expiresAt: Date): Promise<void>;
+  getEmailVerification(userId: string): Promise<{ code: string; expiresAt: Date } | undefined>;
+  deleteEmailVerification(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -198,6 +202,7 @@ export class DatabaseStorage implements IStorage {
         authProvider: null,
         authProviderId: null,
         passwordHash: null,
+        emailVerified: row.email_verified ?? false,
         createdAt: null,
         updatedAt: null,
       },
@@ -462,6 +467,23 @@ export class DatabaseStorage implements IStorage {
       .where(eq(priceChangeRequests.id, id))
       .returning();
     return request || undefined;
+  }
+
+  async createEmailVerification(userId: string, code: string, expiresAt: Date): Promise<void> {
+    await db.delete(emailVerifications).where(eq(emailVerifications.userId, userId));
+    await db.insert(emailVerifications).values({ userId, code, expiresAt });
+  }
+
+  async getEmailVerification(userId: string): Promise<{ code: string; expiresAt: Date } | undefined> {
+    const [row] = await db
+      .select({ code: emailVerifications.code, expiresAt: emailVerifications.expiresAt })
+      .from(emailVerifications)
+      .where(eq(emailVerifications.userId, userId));
+    return row || undefined;
+  }
+
+  async deleteEmailVerification(userId: string): Promise<void> {
+    await db.delete(emailVerifications).where(eq(emailVerifications.userId, userId));
   }
 }
 

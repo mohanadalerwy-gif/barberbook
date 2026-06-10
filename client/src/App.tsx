@@ -20,6 +20,7 @@ import BarberDashboard from "@/pages/BarberDashboard";
 import SupportCenterPage from "@/pages/SupportCenterPage";
 import PriceChangeRequestPage from "@/pages/PriceChangeRequestPage";
 import LoginPage from "@/pages/LoginPage";
+import VerifyEmailPage from "@/pages/VerifyEmailPage";
 import AdminPage from "@/pages/AdminPage";
 
 function Router() {
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/support" component={SupportCenterPage} />
       <Route path="/price-change-request" component={PriceChangeRequestPage} />
       <Route path="/login" component={LoginPage} />
+      <Route path="/verify-email" component={VerifyEmailPage} />
       <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>

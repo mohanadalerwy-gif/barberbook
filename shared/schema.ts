@@ -29,8 +29,17 @@ export const users = pgTable("users", {
   authProvider: text("auth_provider"),
   authProviderId: text("auth_provider_id"),
   passwordHash: text("password_hash"),
+  emailVerified: boolean("email_verified").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const emailVerifications = pgTable("email_verifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  code: varchar("code", { length: 6 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const barbers = pgTable("barbers", {
