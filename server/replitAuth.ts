@@ -11,7 +11,7 @@ export function getSession() {
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
+    createTableIfMissing: true,
     ttl: sessionTtl,
     tableName: "sessions",
   });
@@ -23,6 +23,7 @@ export function getSession() {
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: sessionTtl,
     },
   });
@@ -92,9 +93,10 @@ export async function setupAuth(app: Express) {
         if (err) return res.status(500).json({ message: "Login failed after registration" });
         res.status(201).json({ id: user.id, email: user.email, role: user.role });
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Registration error:", err);
-      res.status(500).json({ message: "Registration failed" });
+      const detail = err?.message ?? String(err);
+      res.status(500).json({ message: `Registration failed: ${detail}` });
     }
   });
 
