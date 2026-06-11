@@ -68,7 +68,7 @@ export default function LoginPage() {
       }
 
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-      navigate('/profile');
+      navigate('/');
     } catch {
       setError('Network error. Please try again.');
     } finally {

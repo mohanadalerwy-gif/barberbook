@@ -46,7 +46,7 @@ export async function setupAuth(app: Express) {
         if (!match) {
           return done(null, false, { message: "Invalid email or password" });
         }
-        if (!user.emailVerified) {
+        if (!user.emailVerified && process.env.SKIP_EMAIL_VERIFICATION !== "true") {
           return done(null, false, { message: "EMAIL_NOT_VERIFIED" });
         }
         return done(null, { claims: { sub: user.id } });
@@ -93,6 +93,15 @@ export async function setupAuth(app: Express) {
         role: "customer",
         emailVerified: false,
       });
+
+      if (process.env.SKIP_EMAIL_VERIFICATION === "true") {
+        await storage.updateUser(user.id, { emailVerified: true });
+        req.login({ claims: { sub: user.id } }, (err) => {
+          if (err) return res.status(500).json({ message: "Login failed after registration" });
+          res.status(201).json({ id: user.id, email: user.email, role: user.role });
+        });
+        return;
+      }
 
       const code = String(Math.floor(100000 + Math.random() * 900000));
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
