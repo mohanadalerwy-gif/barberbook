@@ -101,7 +101,9 @@ export async function setupAuth(app: Express) {
 
       res.status(201).json({ requiresVerification: true, userId: user.id });
     } catch (err: any) {
-      console.error("Registration error:", err);
+      console.error("Registration error – message:", err?.message);
+      console.error("Registration error – stack:", err?.stack);
+      console.error("Registration error – full:", err);
       const detail = err?.message ?? String(err);
       res.status(500).json({ message: `Registration failed: ${detail}` });
     }
