@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import BottomNav from '@/components/BottomNav';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -155,7 +154,7 @@ export default function SupportCenterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center gap-3">
           <Button
@@ -284,7 +283,6 @@ export default function SupportCenterPage() {
         </Tabs>
       </main>
 
-      <BottomNav />
     </div>
   );
 }

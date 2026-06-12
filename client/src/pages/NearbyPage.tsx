@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Skeleton } from '@/components/ui/skeleton';
 import BarberCard from '@/components/BarberCard';
-import BottomNav from '@/components/BottomNav';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import type { Barber } from '@/lib/types';
 
@@ -52,7 +51,7 @@ export default function NearbyPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+    <div className="min-h-screen bg-background/80 backdrop-blur-sm">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center gap-3">
           <Button 
@@ -129,7 +128,6 @@ export default function NearbyPage() {
         )}
       </main>
 
-      <BottomNav />
     </div>
   );
 }

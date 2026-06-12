@@ -17,7 +17,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import BottomNav from '@/components/BottomNav';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, Scissors, CheckCircle, MapPin, Loader2 } from 'lucide-react';
@@ -154,7 +153,7 @@ export default function BarberRegisterPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+      <div className="min-h-screen bg-background/80 backdrop-blur-sm">
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
           <div className="flex items-center gap-3">
             <Button 
@@ -181,14 +180,12 @@ export default function BarberRegisterPage() {
             {t('viewProfile')}
           </Button>
         </main>
-
-        <BottomNav />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+    <div className="min-h-screen bg-background/80 backdrop-blur-sm">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center gap-3">
           <Button 
@@ -423,7 +420,6 @@ export default function BarberRegisterPage() {
         </Form>
       </main>
 
-      <BottomNav />
     </div>
   );
 }

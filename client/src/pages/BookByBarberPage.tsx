@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import BottomNav from '@/components/BottomNav';
 import { ArrowLeft, Star, Scissors, Store } from 'lucide-react';
 import type { Barber } from '@/lib/types';
 
@@ -28,7 +27,7 @@ export default function BookByBarberPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+    <div className="min-h-screen bg-background/80 backdrop-blur-sm">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center gap-3">
           <Button 
@@ -127,7 +126,6 @@ export default function BookByBarberPage() {
         )}
       </main>
 
-      <BottomNav />
     </div>
   );
 }

@@ -3,7 +3,6 @@ import { useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import BottomNav from '@/components/BottomNav';
 import { ArrowLeft, MapPin, Users, Scissors, Sparkles } from 'lucide-react';
 
 function DecorativeAccent() {
@@ -29,7 +28,7 @@ export default function BookPage() {
   }, [i18n.language]);
 
   return (
-    <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+    <div className="min-h-screen bg-background/80 backdrop-blur-sm">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center gap-3">
           <Button 
@@ -97,7 +96,6 @@ export default function BookPage() {
         </section>
       </main>
 
-      <BottomNav />
     </div>
   );
 }

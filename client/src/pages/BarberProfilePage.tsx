@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import BottomNav from '@/components/BottomNav';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, Star, MapPin, Clock, Check, CheckCircle, Navigation } from 'lucide-react';
@@ -157,7 +156,7 @@ export default function BarberProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+      <div className="min-h-screen bg-background/80 backdrop-blur-sm">
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate('/book')}>
@@ -179,18 +178,16 @@ export default function BarberProfilePage() {
             </CardContent>
           </Card>
         </main>
-        <BottomNav />
       </div>
     );
   }
 
   if (!barber) {
     return (
-      <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+      <div className="min-h-screen bg-background/80 backdrop-blur-sm">
         <div className="flex items-center justify-center h-full pt-20">
           <p className="text-muted-foreground">{t('barberNotFound')}</p>
         </div>
-        <BottomNav />
       </div>
     );
   }
@@ -226,7 +223,7 @@ export default function BarberProfilePage() {
   if (step === 'success') {
     const serviceLabel = selectedServices.map(s => s.name).join(' + ');
     return (
-      <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+      <div className="min-h-screen bg-background/80 backdrop-blur-sm">
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
           <h1 className="text-xl font-bold text-center">{t('appointmentBooked')}</h1>
         </header>
@@ -286,14 +283,12 @@ export default function BarberProfilePage() {
             </Button>
           </div>
         </main>
-
-        <BottomNav />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+    <div className="min-h-screen bg-background/80 backdrop-blur-sm">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center gap-3">
           <Button
@@ -545,8 +540,6 @@ export default function BarberProfilePage() {
           </section>
         )}
       </main>
-
-      <BottomNav />
     </div>
   );
 }

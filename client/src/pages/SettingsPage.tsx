@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import BottomNav from '@/components/BottomNav';
 import { useAuth } from '@/hooks/useAuth';
 import {
   ArrowLeft,
@@ -73,7 +72,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background border-b px-4 py-4">
         <div className="flex items-center gap-3">
           <Button
@@ -199,7 +198,6 @@ export default function SettingsPage() {
         </p>
       </main>
 
-      <BottomNav />
     </div>
   );
 }

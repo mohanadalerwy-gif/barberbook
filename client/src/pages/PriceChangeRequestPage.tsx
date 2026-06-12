@@ -142,7 +142,7 @@ export default function PriceChangeRequestPage() {
   const hasPendingRequest = requests.some(r => r.status === 'pending');
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center gap-3">
           <Button

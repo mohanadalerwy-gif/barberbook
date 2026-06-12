@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import BarberCard from '@/components/BarberCard';
-import BottomNav from '@/components/BottomNav';
 import { MapPin, Calendar, Navigation, Scissors, Sparkles, CheckCircle, Star } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { openMapsApp } from '@/lib/maps-utils';
@@ -259,7 +258,7 @@ export default function HomePage() {
 
   return (
     <div
-      className="min-h-screen pb-20 bg-cover bg-center bg-no-repeat"
+      className="min-h-screen bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${isDarkMode ? darkBg : lightBg})` }}
     >
       <div className="min-h-screen bg-background/70 backdrop-blur-[2px]">
@@ -383,7 +382,6 @@ export default function HomePage() {
           </section>
         </main>
 
-        <BottomNav />
       </div>
     </div>
   );

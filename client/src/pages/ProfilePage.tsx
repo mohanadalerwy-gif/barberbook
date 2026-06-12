@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import BottomNav from '@/components/BottomNav';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { 
@@ -81,7 +80,7 @@ export default function ProfilePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+      <div className="min-h-screen bg-background/80 backdrop-blur-sm">
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
           <h1 className="text-xl font-bold">{t('profile')}</h1>
         </header>
@@ -98,14 +97,13 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </main>
-        <BottomNav />
       </div>
     );
   }
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+      <div className="min-h-screen bg-background/80 backdrop-blur-sm">
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
           <h1 className="text-xl font-bold">{t('profile')}</h1>
         </header>
@@ -143,8 +141,6 @@ export default function ProfilePage() {
             </Button>
           </div>
         </main>
-
-        <BottomNav />
       </div>
     );
   }
@@ -152,7 +148,7 @@ export default function ProfilePage() {
   const userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || t('user');
 
   return (
-    <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-20">
+    <div className="min-h-screen bg-background/80 backdrop-blur-sm">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">{t('profile')}</h1>
@@ -309,8 +305,6 @@ export default function ProfilePage() {
           {t('signOut')}
         </Button>
       </main>
-
-      <BottomNav />
     </div>
   );
 }

@@ -170,12 +170,17 @@
     @apply border-border;
   }
 
+  html, #root {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    height: 100dvh;
+    overflow: hidden;
     background-image: linear-gradient(rgba(255, 255, 255, 0.50), rgba(255, 255, 255, 0.50)), url('@assets/light_background.png');
     background-size: cover;
-    /* background-attachment: fixed is intentionally omitted — it breaks position:fixed
-       children on iOS Safari (WebKit compositing layer bug). */
     background-attachment: scroll;
     background-position: center;
     background-repeat: no-repeat;
