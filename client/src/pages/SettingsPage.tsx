@@ -18,6 +18,35 @@ import {
   DollarSign,
 } from 'lucide-react';
 
+// ── iOS-style toggle ────────────────────────────────────────────────────────
+
+function IOSToggle({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={[
+        'relative inline-flex h-[31px] w-[51px] shrink-0 rounded-full',
+        'transition-colors duration-200 ease-in-out',
+        checked
+          ? 'bg-[#34C759]'
+          : 'bg-[#E5E5EA] dark:bg-[#3A3A3C]',
+      ].join(' ')}
+    >
+      <span
+        className={[
+          'absolute top-[2px] left-[2px]',
+          'h-[27px] w-[27px] rounded-full bg-white',
+          'shadow-[0_2px_6px_rgba(0,0,0,0.18),0_1px_2px_rgba(0,0,0,0.12)]',
+          'transition-transform duration-200 ease-in-out',
+          checked ? 'translate-x-[20px]' : 'translate-x-0',
+        ].join(' ')}
+      />
+    </span>
+  );
+}
+
+// ── page ───────────────────────────────────────────────────────────────────
+
 export default function SettingsPage() {
   const [, navigate] = useLocation();
   const { user, isAuthenticated } = useAuth();
@@ -30,7 +59,7 @@ export default function SettingsPage() {
     return 'light';
   });
 
-  const currentLang = i18n.language.startsWith('ar') ? 'ar' : 'en';
+  const isArabic = i18n.language.startsWith('ar');
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -40,8 +69,7 @@ export default function SettingsPage() {
   };
 
   const toggleLanguage = () => {
-    const newLang = currentLang === 'ar' ? 'en' : 'ar';
-    i18n.changeLanguage(newLang);
+    i18n.changeLanguage(isArabic ? 'en' : 'ar');
   };
 
   return (
@@ -63,6 +91,8 @@ export default function SettingsPage() {
       <main className="px-4 py-6 space-y-6">
         <Card>
           <CardContent className="p-0">
+
+            {/* Dark Mode row */}
             <button
               className="w-full flex items-center justify-between p-4 hover-elevate rounded-t-lg"
               onClick={toggleTheme}
@@ -76,11 +106,12 @@ export default function SettingsPage() {
                 )}
                 <span>{t('darkMode')}</span>
               </div>
-              <span className="text-muted-foreground text-sm">
-                {theme === 'dark' ? t('on') : t('off')}
-              </span>
+              <IOSToggle checked={theme === 'dark'} />
             </button>
+
             <Separator />
+
+            {/* Language row */}
             <button
               className="w-full flex items-center justify-between p-4 hover-elevate"
               onClick={toggleLanguage}
@@ -88,16 +119,13 @@ export default function SettingsPage() {
             >
               <div className="flex items-center gap-3">
                 <Globe className="h-5 w-5 text-muted-foreground" />
-                <span>{t('language')}</span>
+                <span>العربية</span>
               </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <span className="text-sm font-medium">
-                  {currentLang === 'ar' ? 'العربية' : 'English'}
-                </span>
-                <ChevronRight className="h-4 w-4" />
-              </div>
+              <IOSToggle checked={isArabic} />
             </button>
+
             <Separator />
+
             <button
               className="w-full flex items-center justify-between p-4 hover-elevate"
               data-testid="button-about"
@@ -108,7 +136,9 @@ export default function SettingsPage() {
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </button>
+
             <Separator />
+
             <button
               className="w-full flex items-center justify-between p-4 hover-elevate rounded-b-lg"
               onClick={() => navigate('/support')}
