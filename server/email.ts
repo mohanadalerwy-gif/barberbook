@@ -10,7 +10,7 @@ export async function sendOtpEmail(to: string, code: string, lang: "en" | "ar" =
   const html = isAr
     ? `
       <div dir="rtl" style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px">
-        <h2 style="color:#111">مرحباً بك في BarberBook</h2>
+        <h2 style="color:#111">مرحباً بك في شيفي</h2>
         <p style="color:#444">استخدم الرمز أدناه لتأكيد بريدك الإلكتروني. صالح لمدة <strong>10 دقائق</strong>.</p>
         <div style="margin:24px 0;text-align:center">
           <span style="display:inline-block;font-size:36px;font-weight:bold;letter-spacing:8px;color:#111;background:#f4f4f5;padding:16px 32px;border-radius:8px">${code}</span>
@@ -19,7 +19,7 @@ export async function sendOtpEmail(to: string, code: string, lang: "en" | "ar" =
       </div>`
     : `
       <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px">
-        <h2 style="color:#111">Welcome to BarberBook</h2>
+        <h2 style="color:#111">Welcome to SHVI</h2>
         <p style="color:#444">Use the code below to verify your email address. It expires in <strong>10 minutes</strong>.</p>
         <div style="margin:24px 0;text-align:center">
           <span style="display:inline-block;font-size:36px;font-weight:bold;letter-spacing:8px;color:#111;background:#f4f4f5;padding:16px 32px;border-radius:8px">${code}</span>
@@ -28,7 +28,7 @@ export async function sendOtpEmail(to: string, code: string, lang: "en" | "ar" =
       </div>`;
 
   await resend.emails.send({
-    from: "onboarding@resend.dev",
+    from: "SHVI <onboarding@resend.dev>",
     to,
     subject,
     html,

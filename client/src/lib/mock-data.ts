@@ -88,7 +88,7 @@ export const generateTimeSlots = (date: Date): TimeSlot[] => {
 export const mockBookings: Booking[] = [
   {
     id: '1',
-    bookingId: 'BARB-2024-000001',
+    bookingId: 'SHVI-2024-000001',
     customerId: 'c1',
     customerName: 'John Smith',
     customerPhone: '+1 555-123-4567',
@@ -104,7 +104,7 @@ export const mockBookings: Booking[] = [
   },
   {
     id: '2',
-    bookingId: 'BARB-2024-000002',
+    bookingId: 'SHVI-2024-000002',
     customerId: 'c1',
     customerName: 'John Smith',
     customerPhone: '+1 555-123-4567',
@@ -123,7 +123,7 @@ export const mockBookings: Booking[] = [
 export const mockBarberBookings: Booking[] = [
   {
     id: 'b1',
-    bookingId: 'BARB-2024-000003',
+    bookingId: 'SHVI-2024-000003',
     customerId: 'c2',
     customerName: 'Mike Brown',
     customerPhone: '+1 555-234-5678',
@@ -139,7 +139,7 @@ export const mockBarberBookings: Booking[] = [
   },
   {
     id: 'b2',
-    bookingId: 'BARB-2024-000004',
+    bookingId: 'SHVI-2024-000004',
     customerId: 'c3',
     customerName: 'Alex Turner',
     customerPhone: '+1 555-345-6789',
@@ -155,7 +155,7 @@ export const mockBarberBookings: Booking[] = [
   },
   {
     id: 'b3',
-    bookingId: 'BARB-2024-000005',
+    bookingId: 'SHVI-2024-000005',
     customerId: 'c4',
     customerName: 'James Wilson',
     customerPhone: '+1 555-456-7890',
