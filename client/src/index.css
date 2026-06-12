@@ -172,28 +172,31 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    background-image: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('@assets/light_background.png');
+    background-image: linear-gradient(rgba(255, 255, 255, 0.50), rgba(255, 255, 255, 0.50)), url('@assets/light_background.png');
     background-size: cover;
-    background-attachment: fixed;
+    /* background-attachment: fixed is intentionally omitted — it breaks position:fixed
+       children on iOS Safari (WebKit compositing layer bug). */
+    background-attachment: scroll;
     background-position: center;
+    background-repeat: no-repeat;
   }
 
   /* Dark mode via prefers-color-scheme (automatic) */
   @media (prefers-color-scheme: dark) {
     body:not(.light-mode) {
-      background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('@assets/dark_background.png');
+      background-image: linear-gradient(rgba(0, 0, 0, 0.50), rgba(0, 0, 0, 0.50)), url('@assets/dark_background.png');
     }
   }
 
   /* Dark mode via .dark class (manual toggle) */
   .dark body,
   body.dark {
-    background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('@assets/dark_background.png');
+    background-image: linear-gradient(rgba(0, 0, 0, 0.50), rgba(0, 0, 0, 0.50)), url('@assets/dark_background.png');
   }
 
   /* Ensure light mode when .dark class is removed */
   :root:not(.dark) body {
-    background-image: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('@assets/light_background.png');
+    background-image: linear-gradient(rgba(255, 255, 255, 0.50), rgba(255, 255, 255, 0.50)), url('@assets/light_background.png');
   }
 }
 
@@ -218,6 +221,11 @@
  * need to be distinguished from eachother visually.
  */
 @layer utilities {
+
+  /* iOS safe-area padding for bottom nav on notched devices */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 
   /* Hide ugly search cancel button in Chrome until we can style it properly */
   input[type="search"]::-webkit-search-cancel-button {

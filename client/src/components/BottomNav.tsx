@@ -1,3 +1,4 @@
+import React from 'react';
 import { useLocation, Link } from 'wouter';
 import { Home, Calendar, MapPin, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,7 +16,10 @@ export default function BottomNav() {
   const { t } = useTranslation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t safe-area-bottom">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t safe-area-bottom"
+      style={{ transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)' } as React.CSSProperties}
+    >
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
         {navItems.map((item) => {
           const isActive = location === item.href ||
