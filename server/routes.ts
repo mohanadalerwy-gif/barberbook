@@ -15,6 +15,15 @@ import {
   createPriceChangeRequestInputSchema
 } from "@shared/schema";
 
+/** Strip fields that must never be sent to clients. */
+function sanitizeUser<T extends { passwordHash?: unknown; authProviderId?: unknown }>(
+  user: T,
+): Omit<T, 'passwordHash' | 'authProviderId'> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { passwordHash, authProviderId, ...safe } = user;
+  return safe as Omit<T, 'passwordHash' | 'authProviderId'>;
+}
+
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -47,7 +56,7 @@ export async function registerRoutes(
         return res.status(404).json({ message: "User not found" });
       }
       const barber = await storage.getBarberByUserId(userId);
-      res.json({ ...user, barber });
+      res.json({ ...sanitizeUser(user), barber });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -68,7 +77,8 @@ export async function registerRoutes(
       
       const { firstName, lastName, profileImageUrl } = parseResult.data;
       const user = await storage.updateUser(userId, { firstName, lastName, profileImageUrl });
-      res.json(user);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      res.json(sanitizeUser(user));
     } catch (error) {
       console.error("Error updating user:", error);
       res.status(500).json({ message: "Failed to update user" });
@@ -858,7 +868,7 @@ export async function registerRoutes(
   app.get('/api/admin/users', isAdmin, async (_req, res) => {
     try {
       const allUsers = await storage.getAllUsers();
-      res.json(allUsers.map(u => ({ ...u, passwordHash: undefined })));
+      res.json(allUsers.map(sanitizeUser));
     } catch (error) {
       console.error("Error fetching admin users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
@@ -957,7 +967,7 @@ export async function registerRoutes(
   app.get('/api/admin/users-detailed', isAdmin, async (_req, res) => {
     try {
       const usersDetailed = await storage.getUsersDetailed();
-      res.json(usersDetailed.map(u => ({ ...u, passwordHash: undefined })));
+      res.json(usersDetailed.map(sanitizeUser));
     } catch (error) {
       console.error("Error fetching detailed users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
