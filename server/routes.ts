@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin, isEmployee } from "./replitAuth";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import {
@@ -797,11 +797,12 @@ export async function registerRoutes(
   // Admin routes
   app.get('/api/admin/stats', isAdmin, async (_req, res) => {
     try {
-      const [bookingStats, revenueStats] = await Promise.all([
+      const [bookingStats, revenueStats, adminCounts] = await Promise.all([
         storage.getBookingStats(),
         storage.getRevenueStats(),
+        storage.getAdminCounts(),
       ]);
-      res.json({ ...bookingStats, ...revenueStats });
+      res.json({ ...bookingStats, ...revenueStats, ...adminCounts });
     } catch (error) {
       console.error("Error fetching admin stats:", error);
       res.status(500).json({ message: "Failed to fetch stats" });
@@ -884,7 +885,7 @@ export async function registerRoutes(
     try {
       const { id } = req.params;
       const { role } = req.body;
-      if (!['customer', 'barber', 'admin'].includes(role)) {
+      if (!['customer', 'barber', 'admin', 'employee'].includes(role)) {
         return res.status(400).json({ message: "Invalid role" });
       }
       const updated = await storage.updateUser(id, { role });
@@ -940,6 +941,103 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating price change request:", error);
       res.status(500).json({ message: "Failed to update price change request" });
+    }
+  });
+
+  app.get('/api/admin/bookings', isAdmin, async (_req, res) => {
+    try {
+      const allBookings = await storage.getAllBookingsAdmin();
+      res.json(allBookings);
+    } catch (error) {
+      console.error("Error fetching admin bookings:", error);
+      res.status(500).json({ message: "Failed to fetch bookings" });
+    }
+  });
+
+  app.get('/api/admin/users-detailed', isAdmin, async (_req, res) => {
+    try {
+      const usersDetailed = await storage.getUsersDetailed();
+      res.json(usersDetailed.map(u => ({ ...u, passwordHash: undefined })));
+    } catch (error) {
+      console.error("Error fetching detailed users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.get('/api/admin/employees', isAdmin, async (_req, res) => {
+    try {
+      const employees = await storage.getEmployees();
+      res.json(employees);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      res.status(500).json({ message: "Failed to fetch employees" });
+    }
+  });
+
+  app.get('/api/admin/tasks', isAdmin, async (_req, res) => {
+    try {
+      const allTasks = await storage.getAllTasks();
+      res.json(allTasks);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+
+  app.post('/api/admin/tasks', isAdmin, async (req: any, res) => {
+    try {
+      const { title, message, assignedTo } = req.body;
+      if (!title || !message || !assignedTo) {
+        return res.status(400).json({ message: "title, message, and assignedTo are required" });
+      }
+      const createdBy = req.user.claims.sub;
+      const task = await storage.createTask({ title, message, assignedTo, createdBy, status: 'pending' });
+      res.status(201).json(task);
+    } catch (error) {
+      console.error("Error creating task:", error);
+      res.status(500).json({ message: "Failed to create task" });
+    }
+  });
+
+  app.patch('/api/admin/tasks/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      if (!['pending', 'done'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      const task = await storage.updateTaskStatus(id, status);
+      if (!task) return res.status(404).json({ message: "Task not found" });
+      res.json(task);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      res.status(500).json({ message: "Failed to update task" });
+    }
+  });
+
+  app.get('/api/tasks', isEmployee, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const myTasks = await storage.getTasksByEmployee(userId);
+      res.json(myTasks);
+    } catch (error) {
+      console.error("Error fetching employee tasks:", error);
+      res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+
+  app.patch('/api/tasks/:id/done', isEmployee, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      const allMyTasks = await storage.getTasksByEmployee(userId);
+      const task = allMyTasks.find(t => t.id === id);
+      if (!task) return res.status(404).json({ message: "Task not found" });
+      const updated = await storage.updateTaskStatus(id, 'done');
+      res.json(updated);
+    } catch (error) {
+      console.error("Error marking task done:", error);
+      res.status(500).json({ message: "Failed to update task" });
     }
   });
 

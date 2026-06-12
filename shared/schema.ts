@@ -3,7 +3,7 @@ import { pgTable, text, varchar, integer, boolean, decimal, timestamp, pgEnum, j
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const userRoleEnum = pgEnum('user_role', ['customer', 'barber', 'admin']);
+export const userRoleEnum = pgEnum('user_role', ['customer', 'barber', 'admin', 'employee']);
 export const bookingStatusEnum = pgEnum('booking_status', ['pending', 'confirmed', 'declined', 'completed', 'cancelled']);
 export const ticketStatusEnum = pgEnum('ticket_status', ['pending', 'approved', 'rejected']);
 export const ticketCategoryEnum = pgEnum('ticket_category', ['price_change', 'technical_issue', 'general_question']);
@@ -32,6 +32,16 @@ export const users = pgTable("users", {
   emailVerified: boolean("email_verified").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const tasks = pgTable("tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  assignedTo: varchar("assigned_to").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  status: text("status").notNull().default('pending'),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const emailVerifications = pgTable("email_verifications", {
@@ -224,6 +234,10 @@ export type SupportTicket = typeof supportTickets.$inferSelect;
 
 export type InsertPriceChangeRequest = z.infer<typeof insertPriceChangeRequestSchema>;
 export type PriceChangeRequest = typeof priceChangeRequests.$inferSelect;
+
+export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true });
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+export type Task = typeof tasks.$inferSelect;
 
 export const updateUserProfileSchema = z.object({
   firstName: z.string().max(100).optional().transform(val => val || undefined),

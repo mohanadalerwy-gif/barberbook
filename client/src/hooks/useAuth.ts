@@ -7,7 +7,7 @@ interface User {
   lastName: string | null;
   profileImageUrl: string | null;
   phone: string | null;
-  role: 'customer' | 'barber' | 'admin';
+  role: 'customer' | 'barber' | 'admin' | 'employee';
   authProvider: string | null;
   authProviderId: string | null;
   createdAt: string | null;

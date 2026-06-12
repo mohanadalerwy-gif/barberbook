@@ -22,6 +22,10 @@ import PriceChangeRequestPage from "@/pages/PriceChangeRequestPage";
 import LoginPage from "@/pages/LoginPage";
 import VerifyEmailPage from "@/pages/VerifyEmailPage";
 import AdminPage from "@/pages/AdminPage";
+import AdminBarbersPage from "@/pages/AdminBarbersPage";
+import AdminUsersPage from "@/pages/AdminUsersPage";
+import AdminBookingsPage from "@/pages/AdminBookingsPage";
+import EmployeeTasksPage from "@/pages/EmployeeTasksPage";
 
 function Router() {
   useEffect(() => {
@@ -48,6 +52,10 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/verify-email" component={VerifyEmailPage} />
       <Route path="/admin" component={AdminPage} />
+      <Route path="/admin/barbers" component={AdminBarbersPage} />
+      <Route path="/admin/users" component={AdminUsersPage} />
+      <Route path="/admin/bookings" component={AdminBookingsPage} />
+      <Route path="/my-tasks" component={EmployeeTasksPage} />
       <Route component={NotFound} />
     </Switch>
   );

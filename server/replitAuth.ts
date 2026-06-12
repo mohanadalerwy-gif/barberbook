@@ -217,3 +217,16 @@ export const isAdmin: RequestHandler = async (req: any, res, next) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const isEmployee: RequestHandler = async (req: any, res, next) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+  try {
+    const user = await storage.getUser(req.user.claims.sub);
+    if (!user || (user.role !== 'employee' && user.role !== 'admin')) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    next();
+  } catch {
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

@@ -1,12 +1,13 @@
 import {
-  users, barbers, services, workingHours, bookings, supportTickets, priceChangeRequests, emailVerifications,
+  users, barbers, services, workingHours, bookings, supportTickets, priceChangeRequests, emailVerifications, tasks,
   type User, type InsertUser, type UpsertUser,
   type Barber, type InsertBarber,
   type Service, type InsertService,
   type WorkingHours, type InsertWorkingHours,
   type Booking, type InsertBooking,
   type SupportTicket, type InsertSupportTicket,
-  type PriceChangeRequest, type InsertPriceChangeRequest
+  type PriceChangeRequest, type InsertPriceChangeRequest,
+  type Task, type InsertTask,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc } from "drizzle-orm";
@@ -65,6 +66,23 @@ export interface IStorage {
   createEmailVerification(userId: string, code: string, expiresAt: Date): Promise<void>;
   getEmailVerification(userId: string): Promise<{ code: string; expiresAt: Date } | undefined>;
   deleteEmailVerification(userId: string): Promise<void>;
+
+  createTask(task: InsertTask): Promise<Task>;
+  getAllTasks(): Promise<(Task & { employeeName: string; employeeEmail: string | null; createdByName: string })[]>;
+  getTasksByEmployee(userId: string): Promise<Task[]>;
+  updateTaskStatus(id: string, status: string): Promise<Task | undefined>;
+  getAllBookingsAdmin(): Promise<{
+    id: string; bookingId: string; date: string; time: string; status: string;
+    rating: number | null; review: string | null; createdAt: string | null;
+    customerName: string; customerEmail: string | null;
+    barberName: string; barberShopName: string | null;
+    serviceName: string; servicePrice: string;
+  }[]>;
+  getUsersDetailed(): Promise<(User & {
+    lastBooking: { serviceName: string; date: string; barberName: string; barberShopName: string | null } | null
+  })[]>;
+  getAdminCounts(): Promise<{ barberCount: number; userCount: number; ticketCount: number; pendingPriceReqCount: number; pendingTaskCount: number }>;
+  getEmployees(): Promise<Pick<User, 'id' | 'email' | 'firstName' | 'lastName'>[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -484,6 +502,130 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEmailVerification(userId: string): Promise<void> {
     await db.delete(emailVerifications).where(eq(emailVerifications.userId, userId));
+  }
+
+  async createTask(insertTask: InsertTask): Promise<Task> {
+    const [task] = await db.insert(tasks).values(insertTask).returning();
+    return task;
+  }
+
+  async getAllTasks(): Promise<(Task & { employeeName: string; employeeEmail: string | null; createdByName: string })[]> {
+    const [allTasks, allUsers] = await Promise.all([
+      db.select().from(tasks).orderBy(desc(tasks.createdAt)),
+      db.select().from(users),
+    ]);
+    const userMap = new Map(allUsers.map(u => [u.id, u]));
+    return allTasks.map(t => {
+      const emp = userMap.get(t.assignedTo);
+      const creator = userMap.get(t.createdBy);
+      return {
+        ...t,
+        employeeName: emp ? [emp.firstName, emp.lastName].filter(Boolean).join(' ') || emp.email || 'Unknown' : 'Unknown',
+        employeeEmail: emp?.email ?? null,
+        createdByName: creator ? [creator.firstName, creator.lastName].filter(Boolean).join(' ') || creator.email || 'Unknown' : 'Unknown',
+      };
+    });
+  }
+
+  async getTasksByEmployee(userId: string): Promise<Task[]> {
+    return await db.select().from(tasks).where(eq(tasks.assignedTo, userId)).orderBy(desc(tasks.createdAt));
+  }
+
+  async updateTaskStatus(id: string, status: string): Promise<Task | undefined> {
+    const [task] = await db.update(tasks).set({ status }).where(eq(tasks.id, id)).returning();
+    return task || undefined;
+  }
+
+  async getAllBookingsAdmin() {
+    const [allBookings, allUsers, allBarbers, allServices] = await Promise.all([
+      db.select().from(bookings).orderBy(desc(bookings.createdAt)),
+      db.select().from(users),
+      db.select().from(barbers),
+      db.select().from(services),
+    ]);
+    const userMap = new Map(allUsers.map(u => [u.id, u]));
+    const barberMap = new Map(allBarbers.map(b => [b.id, b]));
+    const serviceMap = new Map(allServices.map(s => [s.id, s]));
+    return allBookings.map(b => {
+      const customer = userMap.get(b.customerId);
+      const barber = barberMap.get(b.barberId);
+      const barberUser = barber ? userMap.get(barber.userId) : undefined;
+      const service = serviceMap.get(b.serviceId);
+      return {
+        id: b.id,
+        bookingId: b.bookingId,
+        date: b.date,
+        time: b.time,
+        status: b.status,
+        rating: b.rating ?? null,
+        review: b.review ?? null,
+        createdAt: b.createdAt ? b.createdAt.toISOString() : null,
+        customerName: customer ? [customer.firstName, customer.lastName].filter(Boolean).join(' ') || customer.email || 'Unknown' : 'Unknown',
+        customerEmail: customer?.email ?? null,
+        barberName: barberUser ? [barberUser.firstName, barberUser.lastName].filter(Boolean).join(' ') || 'Unknown' : 'Unknown',
+        barberShopName: barber?.shopName ?? null,
+        serviceName: service?.name ?? 'Unknown',
+        servicePrice: service?.price ?? '0',
+      };
+    });
+  }
+
+  async getUsersDetailed() {
+    const [allUsers, allBookings, allBarbers, allServices] = await Promise.all([
+      db.select().from(users).orderBy(desc(users.createdAt)),
+      db.select().from(bookings).orderBy(desc(bookings.createdAt)),
+      db.select().from(barbers),
+      db.select().from(services),
+    ]);
+    const barberMap = new Map(allBarbers.map(b => [b.id, b]));
+    const userMap = new Map(allUsers.map(u => [u.id, u]));
+    const serviceMap = new Map(allServices.map(s => [s.id, s]));
+    const lastBookingByCustomer = new Map<string, typeof allBookings[0]>();
+    for (const booking of allBookings) {
+      if (!lastBookingByCustomer.has(booking.customerId)) {
+        lastBookingByCustomer.set(booking.customerId, booking);
+      }
+    }
+    return allUsers.map(user => {
+      const lb = lastBookingByCustomer.get(user.id);
+      if (!lb) return { ...user, lastBooking: null };
+      const service = serviceMap.get(lb.serviceId);
+      const barber = barberMap.get(lb.barberId);
+      const barberUser = barber ? userMap.get(barber.userId) : undefined;
+      return {
+        ...user,
+        lastBooking: {
+          serviceName: service?.name ?? 'Unknown',
+          date: lb.date,
+          barberName: barberUser ? [barberUser.firstName, barberUser.lastName].filter(Boolean).join(' ') || 'Unknown' : 'Unknown',
+          barberShopName: barber?.shopName ?? null,
+        },
+      };
+    });
+  }
+
+  async getAdminCounts() {
+    const [barberRes, userRes, ticketRes, priceRes, taskRes] = await Promise.all([
+      db.select({ count: sql<number>`count(*)::int` }).from(barbers),
+      db.select({ count: sql<number>`count(*)::int` }).from(users),
+      db.select({ count: sql<number>`count(*)::int` }).from(supportTickets),
+      db.select({ count: sql<number>`count(*)::int` }).from(priceChangeRequests).where(eq(priceChangeRequests.status, 'pending' as any)),
+      db.select({ count: sql<number>`count(*)::int` }).from(tasks).where(eq(tasks.status, 'pending')),
+    ]);
+    return {
+      barberCount: Number(barberRes[0]?.count ?? 0),
+      userCount: Number(userRes[0]?.count ?? 0),
+      ticketCount: Number(ticketRes[0]?.count ?? 0),
+      pendingPriceReqCount: Number(priceRes[0]?.count ?? 0),
+      pendingTaskCount: Number(taskRes[0]?.count ?? 0),
+    };
+  }
+
+  async getEmployees(): Promise<Pick<User, 'id' | 'email' | 'firstName' | 'lastName'>[]> {
+    return await db
+      .select({ id: users.id, email: users.email, firstName: users.firstName, lastName: users.lastName })
+      .from(users)
+      .where(eq(users.role, 'employee'));
   }
 }
 
