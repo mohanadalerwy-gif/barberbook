@@ -269,6 +269,7 @@
   "signUp": "سجل الآن",
   "haveAccount": "لديك حساب بالفعل؟",
   "networkError": "خطأ في الشبكة. يرجى المحاولة مرة أخرى.",
+  "passwordsDoNotMatch": "كلمات المرور غير متطابقة",
   "employee": "موظف",
   "makeEmployee": "جعله موظفاً",
   "removeEmployee": "إزالة صلاحيات الموظف",

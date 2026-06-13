@@ -269,6 +269,7 @@
   "signUp": "Sign up",
   "haveAccount": "Already have an account?",
   "networkError": "Network error. Please try again.",
+  "passwordsDoNotMatch": "Passwords do not match",
   "employee": "Employee",
   "makeEmployee": "Make Employee",
   "removeEmployee": "Remove Employee",

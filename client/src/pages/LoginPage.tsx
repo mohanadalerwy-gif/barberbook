@@ -30,7 +30,7 @@ export default function LoginPage() {
     setError('');
 
     if (mode === 'register' && password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('passwordsDoNotMatch'));
       return;
     }
 
@@ -70,7 +70,7 @@ export default function LoginPage() {
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       navigate('/');
     } catch {
-      setError('Network error. Please try again.');
+      setError(t('networkError'));
     } finally {
       setLoading(false);
     }

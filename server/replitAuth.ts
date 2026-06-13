@@ -81,6 +81,13 @@ export async function setupAuth(app: Express) {
     try {
       const existing = await storage.getUserByEmail(email.toLowerCase());
       if (existing) {
+        if (!existing.emailVerified) {
+          const code = String(Math.floor(100000 + Math.random() * 900000));
+          const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+          await storage.createEmailVerification(existing.id, code, expiresAt);
+          await sendOtpEmail(existing.email!, code, lang === "ar" ? "ar" : "en");
+          return res.status(200).json({ requiresVerification: true, userId: existing.id });
+        }
         return res.status(409).json({ message: "Email already in use" });
       }
 
@@ -179,8 +186,13 @@ export async function setupAuth(app: Express) {
       if (err) return next(err);
       if (!user) {
         if (info?.message === "EMAIL_NOT_VERIFIED") {
-          // Find the user so we can return their id for the verification redirect.
           const existing = await storage.getUserByEmail((req.body.email ?? "").toLowerCase());
+          if (existing?.email) {
+            const code = String(Math.floor(100000 + Math.random() * 900000));
+            const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+            await storage.createEmailVerification(existing.id, code, expiresAt);
+            await sendOtpEmail(existing.email, code, (req.body.lang ?? "en") === "ar" ? "ar" : "en");
+          }
           return res.status(403).json({
             message: "EMAIL_NOT_VERIFIED",
             userId: existing?.id ?? null,
