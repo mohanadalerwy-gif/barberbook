@@ -28,7 +28,7 @@ export async function sendOtpEmail(to: string, code: string, lang: "en" | "ar" =
       </div>`;
 
   await resend.emails.send({
-    from: "SHVI <onboarding@resend.dev>",
+    from: process.env.EMAIL_FROM || "SHVI <no-reply@shvi.app>",
     to,
     subject,
     html,
