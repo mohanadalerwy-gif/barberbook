@@ -509,9 +509,14 @@ export async function registerRoutes(
           const customer = await storage.getUser(booking.customerId);
 
           // Resolve all service IDs (multi-service support)
-          const allServiceIds: string[] = booking.serviceIds
-            ? JSON.parse(booking.serviceIds)
-            : [booking.serviceId];
+          let allServiceIds: string[];
+          try {
+            allServiceIds = booking.serviceIds
+              ? JSON.parse(booking.serviceIds)
+              : [booking.serviceId];
+          } catch {
+            allServiceIds = [booking.serviceId];
+          }
           const allServices = await Promise.all(allServiceIds.map(id => storage.getService(id)));
 
           return {

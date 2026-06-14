@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import BarberCard from '@/components/BarberCard';
-import { MapPin, Calendar, Navigation, Scissors, Sparkles, CheckCircle, Star } from 'lucide-react';
+import { MapPin, Calendar, Navigation, Scissors, Sparkles, CheckCircle, Star, Home } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { openMapsApp } from '@/lib/maps-utils';
 import type { Barber } from '@/lib/types';
@@ -28,11 +28,13 @@ interface Booking {
   serviceName: string;
   date: string;
   time: string;
-  status: 'pending' | 'confirmed' | 'accepted' | 'declined' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'accepted' | 'declined' | 'completed' | 'cancelled' | 'traveling' | 'arrived';
   duration: number;
   price: number;
   rating: number | null;
   review: string | null;
+  bookingType?: string | null;
+  customerAddress?: string | null;
 }
 
 function DecorativeAccent() {
@@ -60,6 +62,7 @@ function BookingCard({ booking }: { booking: Booking }) {
   const [submitError, setSubmitError] = useState('');
 
   const isCompleted = booking.status === 'completed';
+  const isHomeService = booking.bookingType === 'home';
   const showReviewForm = isCompleted && !booking.rating && !submitted;
   const showSubmittedThanks = isCompleted && (!!booking.rating || submitted);
 
@@ -103,40 +106,53 @@ function BookingCard({ booking }: { booking: Booking }) {
             <p className="text-sm text-muted-foreground">
               {format(parseISO(booking.date), 'EEE, MMM d')} {t('at')} {booking.time}
             </p>
-            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-              <MapPin className="h-3.5 w-3.5 shrink-0" />
-              {booking.barberAddress || '—'}
-            </p>
-            {booking.barberAddress && (
-              <button
-                className="flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"
-                onClick={() => {
-                  const lat = parseFloat(booking.barberLat ?? '');
-                  const lng = parseFloat(booking.barberLng ?? '');
-                  if (!isNaN(lat) && !isNaN(lng)) {
-                    openMapsApp({ lat, lng, name: booking.barberName });
-                  } else {
-                    window.open(`https://www.google.com/maps/search/?q=${encodeURIComponent(booking.barberAddress)}`, '_blank');
-                  }
-                }}
-              >
-                <Navigation className="h-3 w-3" />
-                Open Location
-              </button>
+            {isHomeService ? (
+              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                <Home className="h-3.5 w-3.5 shrink-0" />
+                {booking.customerAddress || t('homeService', 'Home Service')}
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  {booking.barberAddress || '—'}
+                </p>
+                {booking.barberAddress && (
+                  <button
+                    className="flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"
+                    onClick={() => {
+                      const lat = parseFloat(booking.barberLat ?? '');
+                      const lng = parseFloat(booking.barberLng ?? '');
+                      if (!isNaN(lat) && !isNaN(lng)) {
+                        openMapsApp({ lat, lng, name: booking.barberName });
+                      } else {
+                        window.open(`https://www.google.com/maps/search/?q=${encodeURIComponent(booking.barberAddress)}`, '_blank');
+                      }
+                    }}
+                  >
+                    <Navigation className="h-3 w-3" />
+                    Open Location
+                  </button>
+                )}
+              </>
             )}
           </div>
           <div className="text-right shrink-0">
             <Badge
               variant="secondary"
               className={
-                booking.status === 'confirmed'
+                booking.status === 'confirmed' || booking.status === 'accepted'
                   ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                   : booking.status === 'completed'
                   ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                  : booking.status === 'traveling'
+                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                  : booking.status === 'arrived'
+                  ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
                   : ''
               }
             >
-              {booking.status === 'confirmed' && <CheckCircle className="h-3 w-3 mr-1" />}
+              {(booking.status === 'confirmed' || booking.status === 'accepted') && <CheckCircle className="h-3 w-3 mr-1" />}
               {t(booking.status)}
             </Badge>
             <p className="text-sm font-medium mt-2">${booking.price}</p>
@@ -248,9 +264,11 @@ export default function HomePage() {
     refetchInterval: 30_000,
   });
 
-  // Confirmed/accepted = upcoming; completed without a review = also shown so customer can rate
+  // Show any active booking: pending/confirmed/accepted/traveling/arrived
+  // Also show completed bookings without a review so the customer can rate
   const upcomingBookings = bookings.filter(
     b => b.status === 'pending' || b.status === 'confirmed' || b.status === 'accepted' ||
+         b.status === 'traveling' || b.status === 'arrived' ||
          (b.status === 'completed' && !b.rating)
   );
 
