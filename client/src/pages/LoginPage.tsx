@@ -129,7 +129,18 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="password">{t('password', 'Password')}</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">{t('password', 'Password')}</Label>
+                {mode === 'login' && (
+                  <button
+                    type="button"
+                    className="text-xs text-primary underline-offset-4 hover:underline"
+                    onClick={() => navigate('/forgot-password')}
+                  >
+                    {t('forgotPassword', 'Forgot password?')}
+                  </button>
+                )}
+              </div>
               <Input
                 id="password"
                 type="password"

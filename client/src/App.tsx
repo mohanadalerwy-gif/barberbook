@@ -22,6 +22,8 @@ import SupportCenterPage from "@/pages/SupportCenterPage";
 import PriceChangeRequestPage from "@/pages/PriceChangeRequestPage";
 import LoginPage from "@/pages/LoginPage";
 import VerifyEmailPage from "@/pages/VerifyEmailPage";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import AdminPage from "@/pages/AdminPage";
 import AdminBarbersPage from "@/pages/AdminBarbersPage";
 import AdminUsersPage from "@/pages/AdminUsersPage";
@@ -69,6 +71,8 @@ function AppShell() {
           <Route path="/price-change-request" component={PriceChangeRequestPage} />
           <Route path="/login" component={LoginPage} />
           <Route path="/verify-email" component={VerifyEmailPage} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/reset-password" component={ResetPassword} />
           <Route path="/admin" component={AdminPage} />
           <Route path="/admin/barbers" component={AdminBarbersPage} />
           <Route path="/admin/users" component={AdminUsersPage} />

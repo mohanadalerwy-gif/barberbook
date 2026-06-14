@@ -5,7 +5,7 @@ import type { Express, RequestHandler } from "express";
 import connectPg from "connect-pg-simple";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
-import { sendOtpEmail } from "./email";
+import { sendOtpEmail, sendPasswordResetEmail } from "./email";
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000;
@@ -211,6 +211,66 @@ export async function setupAuth(app: Express) {
     req.logout(() => {
       res.json({ message: "Logged out successfully" });
     });
+  });
+
+  app.post("/api/forgot-password", async (req, res) => {
+    const { email, lang } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    try {
+      const user = await storage.getUserByEmail(email.toLowerCase());
+      if (!user) {
+        return res.json({ message: "If this email exists, a reset code was sent" });
+      }
+
+      const token = String(Math.floor(100000 + Math.random() * 900000));
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      await storage.createPasswordResetToken(user.id, token, expiresAt);
+
+      if (process.env.SKIP_EMAIL_VERIFICATION === "true") {
+        return res.json({ message: "If this email exists, a reset code was sent", token });
+      }
+
+      await sendPasswordResetEmail(user.email!, token, lang === "ar" ? "ar" : "en");
+      res.json({ message: "If this email exists, a reset code was sent" });
+    } catch (err) {
+      console.error("Forgot password error:", err);
+      res.status(500).json({ message: "Something went wrong" });
+    }
+  });
+
+  app.post("/api/reset-password", async (req, res) => {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: "Token and new password are required" });
+    }
+    if (typeof newPassword !== "string" || newPassword.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters" });
+    }
+
+    try {
+      const record = await storage.getPasswordResetToken(token);
+      if (!record) {
+        return res.status(400).json({ message: "Invalid or expired reset code" });
+      }
+      if (record.used) {
+        return res.status(400).json({ message: "Reset code has already been used" });
+      }
+      if (new Date() > record.expiresAt) {
+        return res.status(400).json({ message: "Reset code has expired" });
+      }
+
+      const passwordHash = await bcrypt.hash(newPassword, 12);
+      await storage.updateUser(record.userId, { passwordHash });
+      await storage.markPasswordResetTokenUsed(record.id);
+
+      res.json({ message: "Password reset successfully" });
+    } catch (err) {
+      console.error("Reset password error:", err);
+      res.status(500).json({ message: "Something went wrong" });
+    }
   });
 }
 

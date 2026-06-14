@@ -1,5 +1,5 @@
 import {
-  users, barbers, services, workingHours, bookings, supportTickets, priceChangeRequests, emailVerifications, tasks,
+  users, barbers, services, workingHours, bookings, supportTickets, priceChangeRequests, emailVerifications, tasks, passwordResetTokens,
   type User, type InsertUser, type UpsertUser,
   type Barber, type InsertBarber,
   type Service, type InsertService,
@@ -66,6 +66,10 @@ export interface IStorage {
   createEmailVerification(userId: string, code: string, expiresAt: Date): Promise<void>;
   getEmailVerification(userId: string): Promise<{ code: string; expiresAt: Date } | undefined>;
   deleteEmailVerification(userId: string): Promise<void>;
+
+  createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void>;
+  getPasswordResetToken(token: string): Promise<{ id: number; userId: string; expiresAt: Date; used: boolean } | undefined>;
+  markPasswordResetTokenUsed(id: number): Promise<void>;
 
   createTask(task: InsertTask): Promise<Task>;
   getAllTasks(): Promise<(Task & { employeeName: string; employeeEmail: string | null; createdByName: string })[]>;
@@ -502,6 +506,22 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEmailVerification(userId: string): Promise<void> {
     await db.delete(emailVerifications).where(eq(emailVerifications.userId, userId));
+  }
+
+  async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void> {
+    await db.insert(passwordResetTokens).values({ userId, token, expiresAt });
+  }
+
+  async getPasswordResetToken(token: string): Promise<{ id: number; userId: string; expiresAt: Date; used: boolean } | undefined> {
+    const [row] = await db
+      .select({ id: passwordResetTokens.id, userId: passwordResetTokens.userId, expiresAt: passwordResetTokens.expiresAt, used: passwordResetTokens.used })
+      .from(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
+    return row || undefined;
+  }
+
+  async markPasswordResetTokenUsed(id: number): Promise<void> {
+    await db.update(passwordResetTokens).set({ used: true }).where(eq(passwordResetTokens.id, id));
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
