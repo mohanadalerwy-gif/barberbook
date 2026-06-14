@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import BarberCard from '@/components/BarberCard';
 import { MapPin, Calendar, Navigation, Scissors, Sparkles, CheckCircle, Star, Home } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { apiRequest } from '@/lib/queryClient';
 import { openMapsApp } from '@/lib/maps-utils';
 import type { Barber } from '@/lib/types';
 import lightBg from '@assets/light_background.png';
@@ -72,24 +73,15 @@ function BookingCard({ booking }: { booking: Booking }) {
     setSubmitError('');
     console.log('[review] submitting', { bookingId: booking.id, rating: selected, review: comment });
     try {
-      const res = await fetch(`/api/bookings/${booking.id}/review`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating: selected, review: comment }),
-      });
-      const data = await res.json().catch(() => ({}));
-      console.log('[review] response', res.status, data);
-      if (res.ok) {
-        setSubmitted(true);
-        setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
-        }, 2500);
-      } else {
-        setSubmitError(data.message || 'Failed to submit review. Please try again.');
-      }
+      await apiRequest('POST', `/api/bookings/${booking.id}/review`, { rating: selected, review: comment });
+      console.log('[review] success');
+      setSubmitted(true);
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      }, 2500);
     } catch (err) {
-      console.error('[review] network error', err);
-      setSubmitError('Network error. Please try again.');
+      console.error('[review] error', err);
+      setSubmitError('Failed to submit review. Please try again.');
     } finally {
       setSubmitting(false);
     }
