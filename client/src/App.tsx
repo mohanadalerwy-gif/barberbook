@@ -30,6 +30,9 @@ import AdminUsersPage from "@/pages/AdminUsersPage";
 import AdminBookingsPage from "@/pages/AdminBookingsPage";
 import EmployeeTasksPage from "@/pages/EmployeeTasksPage";
 import HomeServiceBooking from "@/pages/HomeServiceBooking";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsOfService from "@/pages/TermsOfService";
+import AboutPage from "@/pages/AboutPage";
 
 function AppShell() {
   const [location] = useLocation();
@@ -80,6 +83,11 @@ function AppShell() {
           <Route path="/admin/bookings" component={AdminBookingsPage} />
           <Route path="/my-tasks" component={EmployeeTasksPage} />
           <Route path="/home-service" component={HomeServiceBooking} />
+          <Route path="/privacy-policy" component={PrivacyPolicy} />
+          <Route path="/privacy" component={PrivacyPolicy} />
+          <Route path="/terms-of-service" component={TermsOfService} />
+          <Route path="/terms" component={TermsOfService} />
+          <Route path="/about" component={AboutPage} />
           <Route component={NotFound} />
         </Switch>
       </div>

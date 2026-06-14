@@ -127,6 +127,7 @@ export default function SettingsPage() {
 
             <button
               className="w-full flex items-center justify-between p-4 hover-elevate"
+              onClick={() => navigate('/about')}
               data-testid="button-about"
             >
               <div className="flex items-center gap-3">
