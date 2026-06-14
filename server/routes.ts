@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin, isEmployee } from "./replitAuth";
+import { generateCsrfToken, csrfProtection } from "./csrf";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import {
@@ -45,6 +46,14 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   await setupAuth(app);
+
+  // CSRF token endpoint — GET is always safe; no CSRF check needed here.
+  app.get("/api/csrf-token", (req: any, res) => {
+    res.json({ token: generateCsrfToken(req) });
+  });
+
+  // Validate CSRF tokens on all mutating API requests (POST/PUT/PATCH/DELETE).
+  app.use("/api", csrfProtection);
 
   app.use("/api", apiLimiter);
 

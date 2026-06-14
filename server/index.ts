@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
+import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -10,6 +11,31 @@ const httpServer = createServer(app);
 // Trust Railway's (and other reverse proxies') forwarded headers so
 // req.secure is correct and secure session cookies are set properly.
 app.set("trust proxy", 1);
+
+app.use(
+  helmet({
+    // CSP is enforced in production; in development Vite's HMR needs relaxed rules.
+    contentSecurityPolicy:
+      process.env.NODE_ENV === "production"
+        ? {
+            directives: {
+              defaultSrc: ["'self'"],
+              scriptSrc: ["'self'", "'unsafe-inline'"],
+              styleSrc: ["'self'", "'unsafe-inline'"],
+              imgSrc: ["'self'", "data:", "blob:", "https://storage.googleapis.com"],
+              connectSrc: ["'self'"],
+              fontSrc: ["'self'", "data:"],
+              frameSrc: ["'none'"],
+              objectSrc: ["'none'"],
+            },
+          }
+        : false,
+    // COEP breaks cross-origin resources (GCS images) — disable it.
+    crossOriginEmbedderPolicy: false,
+    frameguard: { action: "deny" },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  }),
+);
 
 declare module "http" {
   interface IncomingMessage {

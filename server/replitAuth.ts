@@ -4,8 +4,43 @@ import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import connectPg from "connect-pg-simple";
 import bcrypt from "bcrypt";
+import { z } from "zod";
 import { storage } from "./storage";
 import { sendOtpEmail, sendPasswordResetEmail } from "./email";
+
+const registerSchema = z.object({
+  email: z.string().email("البريد الإلكتروني غير صالح"),
+  password: z.string().min(8, "كلمة المرور يجب أن تكون 8 أحرف على الأقل"),
+  firstName: z.string().max(50).optional(),
+  lastName: z.string().max(50).optional(),
+  lang: z.enum(["ar", "en"]).optional(),
+});
+
+const loginSchema = z.object({
+  email: z.string().email("البريد الإلكتروني غير صالح"),
+  password: z.string().min(1, "كلمة المرور مطلوبة"),
+  lang: z.enum(["ar", "en"]).optional(),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email("البريد الإلكتروني غير صالح"),
+  lang: z.enum(["ar", "en"]).optional(),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, "رمز إعادة التعيين مطلوب"),
+  newPassword: z.string().min(8, "كلمة المرور يجب أن تكون 8 أحرف على الأقل"),
+});
+
+const verifyEmailSchema = z.object({
+  userId: z.string().min(1, "معرف المستخدم مطلوب"),
+  code: z.string().length(6, "رمز التحقق يجب أن يكون 6 أرقام"),
+});
+
+const resendVerificationSchema = z.object({
+  userId: z.string().min(1, "معرف المستخدم مطلوب"),
+  lang: z.enum(["ar", "en"]).optional(),
+});
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000;
@@ -69,14 +104,12 @@ export async function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res) => {
-    const { email, password, firstName, lastName, lang } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+    const parse = registerSchema.safeParse(req.body);
+    if (!parse.success) {
+      const firstMessage = parse.error.errors[0]?.message ?? "بيانات غير صالحة";
+      return res.status(400).json({ message: firstMessage });
     }
-    if (typeof password !== "string" || password.length < 8) {
-      return res.status(400).json({ message: "Password must be at least 8 characters" });
-    }
+    const { email, password, firstName, lastName, lang } = parse.data;
 
     try {
       const existing = await storage.getUserByEmail(email.toLowerCase());
@@ -126,10 +159,11 @@ export async function setupAuth(app: Express) {
   });
 
   app.post("/api/verify-email", async (req, res) => {
-    const { userId, code } = req.body;
-    if (!userId || !code) {
-      return res.status(400).json({ message: "userId and code are required" });
+    const parse = verifyEmailSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({ message: parse.error.errors[0]?.message ?? "بيانات غير صالحة" });
     }
+    const { userId, code } = parse.data;
 
     const verification = await storage.getEmailVerification(userId);
     if (!verification) {
@@ -154,10 +188,11 @@ export async function setupAuth(app: Express) {
   });
 
   app.post("/api/resend-verification", async (req, res) => {
-    const { userId, lang } = req.body;
-    if (!userId) {
-      return res.status(400).json({ message: "userId is required" });
+    const parse = resendVerificationSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({ message: parse.error.errors[0]?.message ?? "بيانات غير صالحة" });
     }
+    const { userId, lang } = parse.data;
 
     const user = await storage.getUser(userId);
     if (!user || !user.email) {
@@ -182,6 +217,10 @@ export async function setupAuth(app: Express) {
   });
 
   app.post("/api/login", async (req, res, next) => {
+    const parse = loginSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({ message: parse.error.errors[0]?.message ?? "بيانات غير صالحة" });
+    }
     passport.authenticate("local", async (err: any, user: any, info: any) => {
       if (err) return next(err);
       if (!user) {
@@ -214,10 +253,11 @@ export async function setupAuth(app: Express) {
   });
 
   app.post("/api/forgot-password", async (req, res) => {
-    const { email, lang } = req.body;
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+    const parse = forgotPasswordSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({ message: parse.error.errors[0]?.message ?? "بيانات غير صالحة" });
     }
+    const { email, lang } = parse.data;
 
     try {
       const user = await storage.getUserByEmail(email.toLowerCase());
@@ -242,13 +282,11 @@ export async function setupAuth(app: Express) {
   });
 
   app.post("/api/reset-password", async (req, res) => {
-    const { token, newPassword } = req.body;
-    if (!token || !newPassword) {
-      return res.status(400).json({ message: "Token and new password are required" });
+    const parse = resetPasswordSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({ message: parse.error.errors[0]?.message ?? "بيانات غير صالحة" });
     }
-    if (typeof newPassword !== "string" || newPassword.length < 8) {
-      return res.status(400).json({ message: "Password must be at least 8 characters" });
-    }
+    const { token, newPassword } = parse.data;
 
     try {
       const record = await storage.getPasswordResetToken(token);

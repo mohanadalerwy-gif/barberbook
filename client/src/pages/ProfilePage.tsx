@@ -19,6 +19,7 @@ import {
   Edit,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { clearCsrfToken } from '@/lib/queryClient';
 
 interface Booking {
   id: string;
@@ -67,6 +68,7 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' });
+    clearCsrfToken();
     await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
     navigate('/');
   };
