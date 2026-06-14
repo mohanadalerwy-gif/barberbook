@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { 
+import {
   User as UserIcon,
   Calendar,
   Settings,
@@ -17,6 +17,8 @@ import {
   CheckCircle,
   Scissors,
   Edit,
+  MapPin,
+  Navigation,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { clearCsrfToken } from '@/lib/queryClient';
@@ -30,9 +32,13 @@ interface Booking {
   serviceName: string;
   date: string;
   time: string;
-  status: 'pending' | 'confirmed' | 'accepted' | 'declined' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'accepted' | 'declined' | 'completed' | 'cancelled' | 'traveling' | 'arrived';
   duration: number;
   price: number;
+  bookingType?: string;
+  customerLocation?: string;
+  rating?: number | null;
+  review?: string | null;
 }
 
 export default function ProfilePage() {
@@ -74,7 +80,7 @@ export default function ProfilePage() {
   };
 
   const upcomingBookings = bookings.filter(
-    b => b.status === 'pending' || b.status === 'confirmed' || b.status === 'accepted'
+    b => b.status === 'pending' || b.status === 'confirmed' || b.status === 'accepted' || b.status === 'traveling' || b.status === 'arrived'
   );
   const pastBookings = bookings.filter(
     b => b.status === 'completed' || b.status === 'cancelled' || b.status === 'declined'
@@ -313,35 +319,62 @@ export default function ProfilePage() {
 
 function BookingCard({ booking, isPast }: { booking: Booking; isPast?: boolean }) {
   const { t } = useTranslation();
-  
+  const isHomeService = booking.bookingType === 'home';
+
+  const statusClass = (() => {
+    switch (booking.status) {
+      case 'confirmed': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      case 'completed': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'traveling': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
+      case 'arrived': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400';
+      default: return '';
+    }
+  })();
+
   return (
-    <Card className={isPast ? "opacity-70" : ""}>
-      <CardContent className="p-4">
+    <Card className={isPast ? 'opacity-70' : ''}>
+      <CardContent className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="font-medium">{booking.serviceName}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium">{booking.serviceName}</p>
+              {isHomeService && (
+                <Badge variant="outline" className="text-xs px-1.5 py-0">
+                  <Navigation className="h-3 w-3 mr-1" />
+                  {t('homeService')}
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">{t('with')} {booking.barberName}</p>
             <p className="text-sm text-muted-foreground mt-1">
               {format(parseISO(booking.date), 'EEE, MMM d')} {t('at')} {booking.time}
             </p>
           </div>
           <div className="text-right">
-            <Badge 
-              variant="secondary"
-              className={
-                booking.status === 'confirmed' 
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
-                  : booking.status === 'completed'
-                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                  : ''
-              }
-            >
-              {booking.status === 'confirmed' && <CheckCircle className="h-3 w-3 mr-1" />}
+            <Badge variant="secondary" className={statusClass}>
+              {(booking.status === 'confirmed' || booking.status === 'arrived') && (
+                <CheckCircle className="h-3 w-3 mr-1" />
+              )}
+              {booking.status === 'traveling' && <Navigation className="h-3 w-3 mr-1" />}
               {t(booking.status)}
             </Badge>
-            <p className="text-sm font-medium mt-2">${booking.price}</p>
+            <p className="text-sm font-medium mt-2">{booking.price} {t('price')}</p>
           </div>
         </div>
+
+        {/* Home service status alerts */}
+        {booking.status === 'traveling' && isHomeService && (
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/10 text-amber-800 dark:text-amber-400 text-sm">
+            <Navigation className="h-4 w-4 shrink-0" />
+            <span>{t('barberOnTheWay')}</span>
+          </div>
+        )}
+        {booking.status === 'arrived' && isHomeService && (
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 text-emerald-800 dark:text-emerald-400 text-sm font-medium">
+            <MapPin className="h-4 w-4 shrink-0" />
+            <span>{t('barberArrived')}</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

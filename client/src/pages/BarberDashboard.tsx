@@ -29,6 +29,9 @@ import {
   Settings,
   Loader2,
   TrendingUp,
+  Navigation,
+  MapPin,
+  Home,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -43,12 +46,15 @@ interface Booking {
   serviceId: string;
   date: string;
   time: string;
-  status: 'pending' | 'confirmed' | 'declined' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'declined' | 'completed' | 'cancelled' | 'traveling' | 'arrived';
   customerName: string;
   customerPhone?: string;
   serviceName: string;
   duration: number;
   price: number;
+  bookingType?: string;
+  customerLocation?: string;
+  customerAddress?: string;
 }
 
 interface WorkingHoursData {
@@ -70,6 +76,8 @@ export default function BarberDashboard() {
   const [activeTab, setActiveTab] = useState('today');
   const [hours, setHours] = useState<WorkingHoursData[]>(emptyWorkingHours);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [homeServiceEnabled, setHomeServiceEnabled] = useState(false);
+  const [homeServicePrice, setHomeServicePrice] = useState('');
 
   const barberId = user?.barber?.id;
 
@@ -140,19 +148,37 @@ export default function BarberDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/barbers', barberId, 'working-hours'] });
       setHasUnsavedChanges(false);
-      toast({
-        title: t('success'),
-        description: t('hoursSaved'),
-      });
+      toast({ title: t('success'), description: t('hoursSaved') });
     },
     onError: () => {
-      toast({
-        title: t('error'),
-        description: t('failedToSaveHours'),
-        variant: "destructive",
-      });
+      toast({ title: t('error'), description: t('failedToSaveHours'), variant: "destructive" });
     },
   });
+
+  const saveSettingsMutation = useMutation({
+    mutationFn: async () => {
+      if (!barberId) throw new Error('No barber ID');
+      return apiRequest('PATCH', `/api/barbers/${barberId}`, {
+        homeServiceEnabled,
+        homeServicePrice: homeServicePrice ? parseInt(homeServicePrice, 10) : null,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: t('success'), description: t('settingsSaved') });
+    },
+    onError: () => {
+      toast({ title: t('error'), description: t('failedToSaveSettings'), variant: "destructive" });
+    },
+  });
+
+  // Initialize home service settings from barber data
+  useEffect(() => {
+    if (user?.barber) {
+      const barber = user.barber as any;
+      setHomeServiceEnabled(barber.homeServiceEnabled ?? false);
+      setHomeServicePrice(barber.homeServicePrice ? String(barber.homeServicePrice) : '');
+    }
+  }, [user?.barber]);
 
   const handleAccept = (booking: Booking) => {
     updateStatusMutation.mutate({ id: booking.id, status: 'confirmed' });
@@ -164,6 +190,14 @@ export default function BarberDashboard() {
 
   const handleComplete = (booking: Booking) => {
     updateStatusMutation.mutate({ id: booking.id, status: 'completed' });
+  };
+
+  const handleTraveling = (booking: Booking) => {
+    updateStatusMutation.mutate({ id: booking.id, status: 'traveling' });
+  };
+
+  const handleArrived = (booking: Booking) => {
+    updateStatusMutation.mutate({ id: booking.id, status: 'arrived' });
   };
 
   const toggleDay = (index: number) => {
@@ -198,6 +232,8 @@ export default function BarberDashboard() {
     isFuture(parseISO(b.date)) && !isToday(parseISO(b.date)) && b.status !== 'declined' && b.status !== 'cancelled'
   );
   const pendingBookings = bookings.filter(b => b.status === 'pending');
+  const pendingHomeBookings = pendingBookings.filter(b => b.bookingType === 'home');
+  const pendingSalonBookings = pendingBookings.filter(b => b.bookingType !== 'home');
 
   const completedBookings = bookings.filter(b => b.status === 'completed');
   const now = new Date();
@@ -377,7 +413,87 @@ export default function BarberDashboard() {
           </Card>
         )}
 
-        {!bookingsLoading && pendingBookings.length > 0 && (
+        {/* Home service pending requests */}
+        {!bookingsLoading && pendingHomeBookings.length > 0 && (
+          <Card className="border-primary/50 bg-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Home className="h-4 w-4 text-primary" />
+                <span className="font-medium text-primary">
+                  {t('homeServiceRequests')}
+                </span>
+                <div className="relative inline-flex items-center ml-1">
+                  <Badge className="bg-primary text-white font-bold px-2.5 z-10 relative">
+                    {pendingHomeBookings.length}
+                  </Badge>
+                  <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-75" />
+                </div>
+                <Badge variant="outline" className="ml-auto text-xs border-primary/40 text-primary">
+                  {t('newHomeRequest')}
+                </Badge>
+              </div>
+              <div className="space-y-3">
+                {pendingHomeBookings.map((booking) => (
+                  <div key={booking.id} className="bg-background rounded-lg p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium">{booking.customerName}</p>
+                        {booking.customerPhone && (
+                          <a
+                            href={`tel:${booking.customerPhone}`}
+                            className="flex items-center gap-1 text-sm text-primary"
+                          >
+                            <Phone className="h-3 w-3" />
+                            {booking.customerPhone}
+                          </a>
+                        )}
+                        <p className="text-sm text-muted-foreground">
+                          {booking.serviceName} · {format(parseISO(booking.date), 'EEE, MMM d')} {t('at')} {booking.time}
+                        </p>
+                        {booking.customerAddress && (
+                          <p className="text-xs text-muted-foreground mt-1">{booking.customerAddress}</p>
+                        )}
+                        {booking.customerLocation && (
+                          <a
+                            href={`https://maps.google.com/?q=${booking.customerLocation}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-xs text-primary mt-1"
+                          >
+                            <MapPin className="h-3 w-3" />
+                            {t('openInMaps')}
+                          </a>
+                        )}
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDecline(booking)}
+                          disabled={updateStatusMutation.isPending}
+                          data-testid={`button-decline-${booking.id}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleAccept(booking)}
+                          disabled={updateStatusMutation.isPending}
+                          data-testid={`button-accept-${booking.id}`}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Regular pending requests */}
+        {!bookingsLoading && pendingSalonBookings.length > 0 && (
           <Card className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -387,13 +503,13 @@ export default function BarberDashboard() {
                 </span>
                 <div className="relative inline-flex items-center ml-1">
                   <Badge className="bg-amber-500 text-white font-bold px-2.5 z-10 relative">
-                    {pendingBookings.length}
+                    {pendingSalonBookings.length}
                   </Badge>
                   <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-75" />
                 </div>
               </div>
               <div className="space-y-3">
-                {pendingBookings.map((booking) => (
+                {pendingSalonBookings.map((booking) => (
                   <div key={booking.id} className="bg-background rounded-lg p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -403,8 +519,8 @@ export default function BarberDashboard() {
                         </p>
                       </div>
                       <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => handleDecline(booking)}
                           disabled={updateStatusMutation.isPending}
@@ -412,7 +528,7 @@ export default function BarberDashboard() {
                         >
                           <X className="h-4 w-4" />
                         </Button>
-                        <Button 
+                        <Button
                           size="sm"
                           onClick={() => handleAccept(booking)}
                           disabled={updateStatusMutation.isPending}
@@ -430,7 +546,7 @@ export default function BarberDashboard() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="today" data-testid="tab-today">
               {t('today')} ({todayBookings.length})
             </TabsTrigger>
@@ -439,6 +555,9 @@ export default function BarberDashboard() {
             </TabsTrigger>
             <TabsTrigger value="hours" data-testid="tab-hours">
               {t('hours')}
+            </TabsTrigger>
+            <TabsTrigger value="settings" data-testid="tab-settings">
+              {t('serviceSettings')}
             </TabsTrigger>
           </TabsList>
 
@@ -466,10 +585,12 @@ export default function BarberDashboard() {
               ))
             ) : todayBookings.length > 0 ? (
               todayBookings.map((booking) => (
-                <BookingCard 
-                  key={booking.id} 
+                <BookingCard
+                  key={booking.id}
                   booking={booking}
                   onComplete={handleComplete}
+                  onTraveling={handleTraveling}
+                  onArrived={handleArrived}
                   isUpdating={updateStatusMutation.isPending}
                 />
               ))
@@ -511,6 +632,8 @@ export default function BarberDashboard() {
                   key={booking.id}
                   booking={booking}
                   onComplete={handleComplete}
+                  onTraveling={handleTraveling}
+                  onArrived={handleArrived}
                   isUpdating={updateStatusMutation.isPending}
                 />
               ))
@@ -587,8 +710,8 @@ export default function BarberDashboard() {
                     </div>
                   ))
                 )}
-                <Button 
-                  className="w-full mt-4" 
+                <Button
+                  className="w-full mt-4"
                   onClick={handleSaveHours}
                   disabled={saveHoursMutation.isPending || !hasUnsavedChanges}
                   data-testid="button-save-hours"
@@ -605,23 +728,91 @@ export default function BarberDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="settings" className="mt-4">
+            <Card>
+              <CardContent className="p-4 space-y-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Home className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{t('homeService')}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="font-medium">{t('homeServiceEnabled')}</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t('homeServiceEnabledDesc')}</p>
+                  </div>
+                  <Switch
+                    checked={homeServiceEnabled}
+                    onCheckedChange={setHomeServiceEnabled}
+                    data-testid="switch-home-service"
+                  />
+                </div>
+
+                {homeServiceEnabled && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="home-price">{t('homeServicePrice')}</Label>
+                    <input
+                      id="home-price"
+                      type="number"
+                      min="0"
+                      value={homeServicePrice}
+                      onChange={e => setHomeServicePrice(e.target.value)}
+                      placeholder={t('homeServicePricePlaceholder')}
+                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      data-testid="input-home-price"
+                    />
+                  </div>
+                )}
+
+                <Button
+                  className="w-full"
+                  onClick={() => saveSettingsMutation.mutate()}
+                  disabled={saveSettingsMutation.isPending}
+                  data-testid="button-save-settings"
+                >
+                  {saveSettingsMutation.isPending ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t('saving')}</>
+                  ) : (
+                    t('saveSettings')
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
     </div>
   );
 }
 
-function BookingCard({ 
-  booking, 
+function BookingCard({
+  booking,
   onComplete,
-  isUpdating = false
-}: { 
-  booking: Booking; 
+  onTraveling,
+  onArrived,
+  isUpdating = false,
+}: {
+  booking: Booking;
   onComplete?: (booking: Booking) => void;
+  onTraveling?: (booking: Booking) => void;
+  onArrived?: (booking: Booking) => void;
   isUpdating?: boolean;
 }) {
   const { t } = useTranslation();
   const isConfirmed = booking.status === 'confirmed';
+  const isTraveling = booking.status === 'traveling';
+  const isArrived = booking.status === 'arrived';
+  const isHomeService = booking.bookingType === 'home';
+
+  const statusClass = (() => {
+    switch (booking.status) {
+      case 'confirmed': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      case 'traveling': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
+      case 'arrived': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400';
+      default: return '';
+    }
+  })();
 
   return (
     <Card data-testid={`booking-${booking.id}`}>
@@ -629,31 +820,81 @@ function BookingCard({
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
-              <User className="h-5 w-5 text-muted-foreground" />
+              {isHomeService ? <Home className="h-5 w-5 text-primary" /> : <User className="h-5 w-5 text-muted-foreground" />}
             </div>
             <div>
               <p className="font-medium">{booking.customerName}</p>
               {booking.customerPhone && (
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <a
+                  href={`tel:${booking.customerPhone}`}
+                  className="flex items-center gap-1 text-sm text-primary"
+                >
                   <Phone className="h-3 w-3" />
                   <span>{booking.customerPhone}</span>
-                </div>
+                </a>
               )}
             </div>
           </div>
           <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <Badge
-              variant="secondary"
-              className={
-                booking.status === 'confirmed'
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                  : ''
-              }
-            >
-              {booking.status === 'confirmed' && <CheckCircle className="h-3 w-3 mr-1" />}
+            <Badge variant="secondary" className={statusClass}>
+              {(isConfirmed || isArrived) && <CheckCircle className="h-3 w-3 mr-1" />}
+              {isTraveling && <Navigation className="h-3 w-3 mr-1" />}
               {t(booking.status)}
             </Badge>
-            {isConfirmed && onComplete && (
+          </div>
+        </div>
+
+        <div className="mt-3 pt-3 border-t text-sm space-y-2">
+          <p className="font-medium">{booking.serviceName}</p>
+          <p className="text-muted-foreground">
+            {format(parseISO(booking.date), 'EEE, MMM d')} {t('at')} {booking.time}
+          </p>
+
+          {/* Home service: location link and address */}
+          {isHomeService && booking.customerLocation && (
+            <a
+              href={`https://maps.google.com/?q=${booking.customerLocation}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-primary font-medium"
+            >
+              <MapPin className="h-4 w-4" />
+              {t('openInMaps')}
+            </a>
+          )}
+          {isHomeService && booking.customerAddress && (
+            <p className="text-muted-foreground text-xs">{booking.customerAddress}</p>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex gap-2 flex-wrap pt-1">
+            {/* Home service: traveling → arrived → complete */}
+            {isHomeService && isConfirmed && onTraveling && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => onTraveling(booking)}
+                disabled={isUpdating}
+                data-testid={`button-traveling-${booking.id}`}
+              >
+                <Navigation className="h-3 w-3 mr-1" />
+                {t('traveling')}
+              </Button>
+            )}
+            {isHomeService && isTraveling && onArrived && (
+              <Button
+                size="sm"
+                className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={() => onArrived(booking)}
+                disabled={isUpdating}
+                data-testid={`button-arrived-${booking.id}`}
+              >
+                <MapPin className="h-3 w-3 mr-1" />
+                {t('markAsArrived')}
+              </Button>
+            )}
+            {((!isHomeService && isConfirmed) || (isHomeService && isArrived)) && onComplete && (
               <Button
                 size="sm"
                 className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white"
@@ -666,13 +907,6 @@ function BookingCard({
               </Button>
             )}
           </div>
-        </div>
-
-        <div className="mt-3 pt-3 border-t text-sm">
-          <p className="font-medium">{booking.serviceName}</p>
-          <p className="text-muted-foreground">
-            {format(parseISO(booking.date), 'EEE, MMM d')} {t('at')} {booking.time}
-          </p>
         </div>
       </CardContent>
     </Card>

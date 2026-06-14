@@ -114,6 +114,8 @@ export async function registerRoutes(
         phone: b.phone || '',
         haircutPrice: b.haircutPrice ? parseFloat(b.haircutPrice) : null,
         beardPrice: b.beardPrice ? parseFloat(b.beardPrice) : null,
+        homeServiceEnabled: b.homeServiceEnabled || false,
+        homeServicePrice: b.homeServicePrice || null,
       }));
 
       res.json(formatted);
@@ -152,6 +154,8 @@ export async function registerRoutes(
         phone: b.phone || '',
         haircutPrice: b.haircutPrice ? parseFloat(b.haircutPrice) : null,
         beardPrice: b.beardPrice ? parseFloat(b.beardPrice) : null,
+        homeServiceEnabled: b.homeServiceEnabled || false,
+        homeServicePrice: b.homeServicePrice || null,
       }));
 
       res.json(formatted);
@@ -188,6 +192,8 @@ export async function registerRoutes(
         phone: barber.phone || '',
         haircutPrice: barber.haircutPrice ? parseFloat(barber.haircutPrice) : null,
         beardPrice: barber.beardPrice ? parseFloat(barber.beardPrice) : null,
+        homeServiceEnabled: barber.homeServiceEnabled || false,
+        homeServicePrice: barber.homeServicePrice || null,
         services: services.map(s => ({
           id: s.id,
           barberId: s.barberId,
@@ -522,7 +528,9 @@ export async function registerRoutes(
             customerPhone: customer?.phone,
             serviceName: allServices.filter(Boolean).map(s => s!.name).join(' + ') || 'Unknown',
             duration: allServices.reduce((sum, s) => sum + (s?.duration || 0), 0),
-            price: allServices.reduce((sum, s) => sum + parseFloat(s?.price || '0'), 0),
+            price: booking.bookingType === 'home' && barber?.homeServicePrice
+              ? barber.homeServicePrice
+              : allServices.reduce((sum, s) => sum + parseFloat(s?.price || '0'), 0),
           };
         })
       );
@@ -539,7 +547,8 @@ export async function registerRoutes(
       const userId = req.user.claims.sub;
       const { status } = req.body;
 
-      if (!['confirmed', 'declined', 'completed', 'cancelled'].includes(status)) {
+      const validStatuses = ['confirmed', 'declined', 'completed', 'cancelled', 'traveling', 'arrived'];
+      if (!validStatuses.includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
 
@@ -548,7 +557,6 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Booking not found" });
       }
 
-      const user = await storage.getUser(userId);
       const barber = await storage.getBarber(booking.barberId);
 
       const isBarber = barber?.userId === userId;
@@ -558,11 +566,17 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Only customers can cancel bookings" });
       }
 
-      if ((status === 'confirmed' || status === 'declined' || status === 'completed') && !isBarber) {
+      if (['confirmed', 'declined', 'completed', 'traveling', 'arrived'].includes(status) && !isBarber) {
         return res.status(403).json({ message: "Only barbers can update this status" });
       }
 
       const updated = await storage.updateBookingStatus(req.params.id, status);
+
+      // When a barber accepts a home service booking, auto-cancel competing requests
+      if (status === 'confirmed' && booking.bookingType === 'home') {
+        await storage.cancelCompetingHomeBookings(booking.id, booking.customerId, booking.date, booking.time);
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Error updating booking status:", error);
@@ -1057,6 +1071,99 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error marking task done:", error);
       res.status(500).json({ message: "Failed to update task" });
+    }
+  });
+
+  app.get('/api/barbers/home-service', async (req, res) => {
+    try {
+      const lat = parseFloat(req.query.lat as string);
+      const lng = parseFloat(req.query.lng as string);
+      const radius = parseFloat(req.query.radius as string) || 20;
+
+      if (isNaN(lat) || isNaN(lng)) {
+        return res.status(400).json({ message: "Invalid coordinates" });
+      }
+
+      const barbers = await storage.getNearbyHomeServiceBarbers(lat, lng, radius);
+      const formatted = barbers.map(b => ({
+        id: b.id,
+        name: [b.user.firstName, b.user.lastName].filter(Boolean).join(' ') || 'Unknown',
+        avatar: b.user.profileImageUrl || '',
+        rating: parseFloat(b.rating || '0'),
+        reviewCount: b.reviewCount || 0,
+        distance: Math.round((b.distance || 0) * 10) / 10,
+        address: b.address || '',
+        shopName: b.shopName || '',
+        homeServicePrice: b.homeServicePrice || null,
+      }));
+      res.json(formatted);
+    } catch (error) {
+      console.error("Error fetching home service barbers:", error);
+      res.status(500).json({ message: "Failed to fetch barbers" });
+    }
+  });
+
+  app.post('/api/bookings/home-service', bookingLimiter, isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { lat, lng, customerAddress, serviceType, date, time } = req.body;
+
+      if (!lat || !lng || !serviceType || !date || !time) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const nearbyBarbers = await storage.getNearbyHomeServiceBarbers(parseFloat(lat), parseFloat(lng), 20);
+      if (nearbyBarbers.length === 0) {
+        return res.status(404).json({ message: "No home service barbers available nearby" });
+      }
+
+      const availableBarbers = [];
+      for (const barber of nearbyBarbers) {
+        if (availableBarbers.length >= 3) break;
+        const dayBookings = await storage.getBookingsByBarberAndDate(barber.id, date);
+        const isSlotTaken = dayBookings.some(
+          b => b.time === time && !['cancelled', 'declined'].includes(b.status)
+        );
+        if (!isSlotTaken) availableBarbers.push(barber);
+      }
+
+      if (availableBarbers.length === 0) {
+        return res.status(404).json({ message: "No barbers available at that time" });
+      }
+
+      const customerLocation = `${lat},${lng}`;
+      const createdBookings = await Promise.all(
+        availableBarbers.map(async (barber) => {
+          const barberServices = await storage.getServices(barber.id);
+          if (barberServices.length === 0) return null;
+          const service =
+            barberServices.find(s => serviceType === 'haircut' ? s.name.toLowerCase().includes('haircut') :
+              serviceType === 'beard' ? s.name.toLowerCase().includes('beard') : true) ||
+            barberServices[0];
+          return storage.createBooking({
+            bookingId: `HS-${Date.now()}-${barber.id.slice(0, 6)}`,
+            customerId: userId,
+            barberId: barber.id,
+            serviceId: service.id,
+            date,
+            time,
+            status: 'pending',
+            bookingType: 'home',
+            customerLocation,
+            customerAddress: customerAddress || null,
+          });
+        })
+      );
+
+      const valid = createdBookings.filter(Boolean);
+      if (valid.length === 0) {
+        return res.status(500).json({ message: "Failed to create home service booking" });
+      }
+
+      res.status(201).json(valid);
+    } catch (error) {
+      console.error("Error creating home service booking:", error);
+      res.status(500).json({ message: "Failed to create booking" });
     }
   });
 

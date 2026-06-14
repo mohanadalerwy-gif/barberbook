@@ -4,7 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const userRoleEnum = pgEnum('user_role', ['customer', 'barber', 'admin', 'employee']);
-export const bookingStatusEnum = pgEnum('booking_status', ['pending', 'confirmed', 'declined', 'completed', 'cancelled']);
+export const bookingStatusEnum = pgEnum('booking_status', ['pending', 'confirmed', 'declined', 'completed', 'cancelled', 'traveling', 'arrived']);
 export const ticketStatusEnum = pgEnum('ticket_status', ['pending', 'approved', 'rejected']);
 export const ticketCategoryEnum = pgEnum('ticket_category', ['price_change', 'technical_issue', 'general_question']);
 
@@ -65,6 +65,8 @@ export const barbers = pgTable("barbers", {
   beardPrice: decimal("beard_price", { precision: 10, scale: 2 }),
   priceRange: text("price_range"),
   isApproved: boolean("is_approved").default(false),
+  homeServiceEnabled: boolean("home_service_enabled").default(false),
+  homeServicePrice: integer("home_service_price"),
   rating: decimal("rating", { precision: 2, scale: 1 }).default("0"),
   reviewCount: integer("review_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
@@ -97,6 +99,9 @@ export const bookings = pgTable("bookings", {
   time: text("time").notNull(),
   status: bookingStatusEnum("status").notNull().default('pending'),
   serviceIds: text("service_ids"),
+  bookingType: text("booking_type").default('salon'),
+  customerLocation: text("customer_location"),
+  customerAddress: text("customer_address"),
   rating: integer("rating"),
   review: text("review"),
   createdAt: timestamp("created_at").defaultNow(),

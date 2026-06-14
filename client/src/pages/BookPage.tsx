@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, MapPin, Users, Scissors, Sparkles } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Scissors, Sparkles, Home } from 'lucide-react';
 
 function DecorativeAccent() {
   return (
@@ -73,7 +73,7 @@ export default function BookPage() {
               </CardContent>
             </Card>
 
-            <Card 
+            <Card
               className="cursor-pointer hover-elevate"
               onClick={() => navigate('/book-by-barber')}
               data-testid="button-book-by-barber"
@@ -87,6 +87,26 @@ export default function BookPage() {
                     <h3 className="font-semibold text-base">{t('bookByBarber')}</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       {t('bookByBarberDesc')}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="cursor-pointer hover-elevate border-primary/30"
+              onClick={() => navigate('/home-service')}
+              data-testid="button-book-home-service"
+            >
+              <CardContent className="p-5">
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Home className="h-7 w-7 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base">{t('homeService')}</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {t('homeServiceDesc')}
                     </p>
                   </div>
                 </div>

@@ -29,6 +29,7 @@ import AdminBarbersPage from "@/pages/AdminBarbersPage";
 import AdminUsersPage from "@/pages/AdminUsersPage";
 import AdminBookingsPage from "@/pages/AdminBookingsPage";
 import EmployeeTasksPage from "@/pages/EmployeeTasksPage";
+import HomeServiceBooking from "@/pages/HomeServiceBooking";
 
 function AppShell() {
   const [location] = useLocation();
@@ -78,6 +79,7 @@ function AppShell() {
           <Route path="/admin/users" component={AdminUsersPage} />
           <Route path="/admin/bookings" component={AdminBookingsPage} />
           <Route path="/my-tasks" component={EmployeeTasksPage} />
+          <Route path="/home-service" component={HomeServiceBooking} />
           <Route component={NotFound} />
         </Switch>
       </div>

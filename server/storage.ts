@@ -87,6 +87,8 @@ export interface IStorage {
   })[]>;
   getAdminCounts(): Promise<{ barberCount: number; userCount: number; ticketCount: number; pendingPriceReqCount: number; pendingTaskCount: number }>;
   getEmployees(): Promise<Pick<User, 'id' | 'email' | 'firstName' | 'lastName'>[]>;
+  getNearbyHomeServiceBarbers(lat: number, lng: number, radiusKm: number): Promise<(Barber & { user: User; distance: number })[]>;
+  cancelCompetingHomeBookings(excludeId: string, customerId: string, date: string, time: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -210,6 +212,8 @@ export class DatabaseStorage implements IStorage {
       beardPrice: row.beard_price,
       priceRange: row.price_range,
       isApproved: row.is_approved,
+      homeServiceEnabled: row.home_service_enabled ?? false,
+      homeServicePrice: row.home_service_price ?? null,
       rating: row.rating,
       reviewCount: row.review_count,
       createdAt: row.created_at,
@@ -646,6 +650,103 @@ export class DatabaseStorage implements IStorage {
       .select({ id: users.id, email: users.email, firstName: users.firstName, lastName: users.lastName })
       .from(users)
       .where(eq(users.role, 'employee'));
+  }
+
+  async getNearbyHomeServiceBarbers(lat: number, lng: number, radiusKm: number): Promise<(Barber & { user: User; distance: number })[]> {
+    const result = await db.execute(sql`
+      SELECT * FROM (
+        SELECT
+          b.id,
+          b.user_id,
+          b.shop_name,
+          b.phone as barber_phone,
+          b.bio,
+          b.address,
+          b.lat,
+          b.lng,
+          b.haircut_price,
+          b.beard_price,
+          b.price_range,
+          b.is_approved,
+          b.home_service_enabled,
+          b.home_service_price,
+          b.rating,
+          b.review_count,
+          b.created_at,
+          u.first_name as user_first_name,
+          u.last_name as user_last_name,
+          u.email as user_email,
+          u.phone as user_phone,
+          u.role as user_role,
+          u.profile_image_url as user_profile_image_url,
+          u.email_verified as email_verified,
+          (
+            6371 * acos(
+              LEAST(1.0, GREATEST(-1.0,
+                cos(radians(${lat})) * cos(radians(CAST(b.lat AS float))) *
+                cos(radians(CAST(b.lng AS float)) - radians(${lng})) +
+                sin(radians(${lat})) * sin(radians(CAST(b.lat AS float)))
+              ))
+            )
+          ) AS distance
+        FROM barbers b
+        JOIN users u ON b.user_id = u.id
+        WHERE b.is_approved = true AND b.home_service_enabled = true
+      ) AS nearby
+      WHERE distance <= ${radiusKm}
+      ORDER BY distance
+    `);
+
+    return (result.rows as any[]).map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      shopName: row.shop_name,
+      phone: row.barber_phone,
+      bio: row.bio,
+      address: row.address,
+      lat: row.lat,
+      lng: row.lng,
+      haircutPrice: row.haircut_price,
+      beardPrice: row.beard_price,
+      priceRange: row.price_range,
+      isApproved: row.is_approved,
+      homeServiceEnabled: row.home_service_enabled,
+      homeServicePrice: row.home_service_price,
+      rating: row.rating,
+      reviewCount: row.review_count,
+      createdAt: row.created_at,
+      user: {
+        id: row.user_id,
+        email: row.user_email,
+        firstName: row.user_first_name,
+        lastName: row.user_last_name,
+        profileImageUrl: row.user_profile_image_url,
+        phone: row.user_phone,
+        role: row.user_role,
+        authProvider: null,
+        authProviderId: null,
+        passwordHash: null,
+        emailVerified: row.email_verified ?? false,
+        createdAt: null,
+        updatedAt: null,
+      },
+      distance: parseFloat(row.distance),
+    }));
+  }
+
+  async cancelCompetingHomeBookings(excludeId: string, customerId: string, date: string, time: string): Promise<void> {
+    await db.update(bookings)
+      .set({ status: 'cancelled' })
+      .where(
+        and(
+          eq(bookings.customerId, customerId),
+          eq(bookings.date, date),
+          eq(bookings.time, time),
+          sql`${bookings.bookingType} = 'home'`,
+          eq(bookings.status, 'pending'),
+          sql`${bookings.id} != ${excludeId}`
+        )
+      );
   }
 }
 
