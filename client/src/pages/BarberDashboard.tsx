@@ -543,15 +543,12 @@ export default function BarberDashboard() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="today" data-testid="tab-today">
               {t('today')} ({todayBookings.length})
             </TabsTrigger>
             <TabsTrigger value="upcoming" data-testid="tab-upcoming">
               {t('upcoming')} ({upcomingBookings.length})
-            </TabsTrigger>
-            <TabsTrigger value="hours" data-testid="tab-hours">
-              {t('hours')}
             </TabsTrigger>
             <TabsTrigger value="settings" data-testid="tab-settings">
               {t('serviceSettings')}
@@ -644,12 +641,46 @@ export default function BarberDashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="hours" className="mt-4">
+          <TabsContent value="settings" className="mt-4 space-y-4">
+            <Card>
+              <CardContent className="p-4 space-y-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Home className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{t('homeService')}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="font-medium">{t('homeServiceEnabled')}</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t('homeServiceEnabledDesc')}</p>
+                  </div>
+                  <Switch
+                    checked={homeServiceEnabled}
+                    onCheckedChange={setHomeServiceEnabled}
+                    data-testid="switch-home-service"
+                  />
+                </div>
+
+                <Button
+                  className="w-full"
+                  onClick={() => saveSettingsMutation.mutate()}
+                  disabled={saveSettingsMutation.isPending}
+                  data-testid="button-save-settings"
+                >
+                  {saveSettingsMutation.isPending ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t('saving')}</>
+                  ) : (
+                    t('saveSettings')
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{t('workingHours')}</span>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">ساعات العمل</span>
                 </div>
                 {hoursLoading ? (
                   <div className="space-y-3">
@@ -659,8 +690,8 @@ export default function BarberDashboard() {
                   </div>
                 ) : (
                   hours.map((day, index) => (
-                    <div 
-                      key={day.day} 
+                    <div
+                      key={day.day}
                       className="flex items-center justify-between py-2"
                     >
                       <div className="flex items-center gap-3">
@@ -673,7 +704,7 @@ export default function BarberDashboard() {
                       </div>
                       {day.isWorking ? (
                         <div className="flex items-center gap-2 text-sm">
-                          <Select 
+                          <Select
                             value={day.startTime}
                             onValueChange={(value) => updateStartTime(index, value)}
                           >
@@ -687,7 +718,7 @@ export default function BarberDashboard() {
                             </SelectContent>
                           </Select>
                           <span className="text-muted-foreground">{t('to')}</span>
-                          <Select 
+                          <Select
                             value={day.endTime}
                             onValueChange={(value) => updateEndTime(index, value)}
                           >
@@ -720,44 +751,6 @@ export default function BarberDashboard() {
                     </>
                   ) : (
                     t('saveChanges')
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings" className="mt-4">
-            <Card>
-              <CardContent className="p-4 space-y-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <Home className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{t('homeService')}</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="font-medium">{t('homeServiceEnabled')}</Label>
-                    <p className="text-xs text-muted-foreground mt-0.5">{t('homeServiceEnabledDesc')}</p>
-                  </div>
-                  <Switch
-                    checked={homeServiceEnabled}
-                    onCheckedChange={setHomeServiceEnabled}
-                    data-testid="switch-home-service"
-                  />
-                </div>
-
-                <p className="text-sm text-muted-foreground">{t('pricesSetByAdmin')}</p>
-
-                <Button
-                  className="w-full"
-                  onClick={() => saveSettingsMutation.mutate()}
-                  disabled={saveSettingsMutation.isPending}
-                  data-testid="button-save-settings"
-                >
-                  {saveSettingsMutation.isPending ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t('saving')}</>
-                  ) : (
-                    t('saveSettings')
                   )}
                 </Button>
               </CardContent>
