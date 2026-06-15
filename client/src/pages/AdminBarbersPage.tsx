@@ -7,10 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import i18n from '@/lib/i18n';
 import {
   ArrowLeft, CheckCircle, XCircle, Star,
-  ChevronDown, ChevronUp, ShieldAlert,
+  ChevronDown, ChevronUp, ShieldAlert, Pencil, X,
 } from 'lucide-react';
 
 interface AdminBarber {
@@ -23,6 +25,10 @@ interface AdminBarber {
   reviewCount: number | null;
   isApproved: boolean | null;
   createdAt: string | null;
+  haircutPrice: string | null;
+  beardPrice: string | null;
+  homeServicePrice: number | null;
+  homeServiceEnabled: boolean | null;
   user: { email: string | null; firstName: string | null; lastName: string | null };
 }
 
@@ -117,6 +123,102 @@ function BarberReviewsSection({ barberId, reviewCount }: { barberId: string; rev
           }
         </div>
       )}
+    </div>
+  );
+}
+
+function BarberPriceEditor({ barber }: { barber: AdminBarber }) {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [haircutPrice, setHaircutPrice] = useState(barber.haircutPrice ?? '');
+  const [beardPrice, setBeardPrice] = useState(barber.beardPrice ?? '');
+  const [homeServicePrice, setHomeServicePrice] = useState(
+    barber.homeServicePrice != null ? String(barber.homeServicePrice) : ''
+  );
+
+  const priceMutation = useMutation({
+    mutationFn: async () => {
+      const body: Record<string, unknown> = {};
+      if (haircutPrice !== '') body.haircutPrice = haircutPrice;
+      if (beardPrice !== '') body.beardPrice = beardPrice;
+      if (homeServicePrice !== '') body.homeServicePrice = homeServicePrice;
+      const res = await apiRequest('PATCH', `/api/admin/barbers/${barber.id}`, body);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/barbers'] });
+      toast({ title: t('success'), description: t('pricesSaved') });
+      setOpen(false);
+    },
+    onError: (err: Error) => {
+      toast({ title: t('error'), description: err.message || t('failedToSavePrices'), variant: 'destructive' });
+    },
+  });
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+      >
+        <Pencil className="h-3 w-3" />
+        {t('editPrices')}
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-2 space-y-3 border rounded-lg p-3 bg-muted/30">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">{t('editPrices')}</span>
+        <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">{t('haircutPriceSAR')}</label>
+          <input
+            type="number"
+            min="0"
+            value={haircutPrice}
+            onChange={e => setHaircutPrice(e.target.value)}
+            className="w-full h-8 rounded border border-input bg-background px-2 text-sm"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">{t('beardPriceSAR')}</label>
+          <input
+            type="number"
+            min="0"
+            value={beardPrice}
+            onChange={e => setBeardPrice(e.target.value)}
+            className="w-full h-8 rounded border border-input bg-background px-2 text-sm"
+          />
+        </div>
+        {barber.homeServiceEnabled && (
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">{t('homeServicePrice')}</label>
+            <input
+              type="number"
+              min="0"
+              value={homeServicePrice}
+              onChange={e => setHomeServicePrice(e.target.value)}
+              className="w-full h-8 rounded border border-input bg-background px-2 text-sm"
+            />
+          </div>
+        )}
+      </div>
+      <Button
+        size="sm"
+        className="w-full h-7 text-xs"
+        disabled={priceMutation.isPending}
+        onClick={() => priceMutation.mutate()}
+      >
+        {priceMutation.isPending ? t('saving') : t('savePrices')}
+      </Button>
     </div>
   );
 }
@@ -230,6 +332,13 @@ export default function AdminBarbersPage() {
                         {barber.phone && <span>{barber.phone}</span>}
                         <span>{t('registered')} {fmt(barber.createdAt)}</span>
                       </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                        {barber.haircutPrice && <span>{t('haircut')}: {barber.haircutPrice} SAR</span>}
+                        {barber.beardPrice && <span>{t('beardTrim')}: {barber.beardPrice} SAR</span>}
+                        {barber.homeServiceEnabled && barber.homeServicePrice != null && (
+                          <span>{t('homeService')}: {barber.homeServicePrice} SAR</span>
+                        )}
+                      </div>
                       {approveError[barber.id] && (
                         <p className="text-xs text-destructive">{approveError[barber.id]}</p>
                       )}
@@ -258,8 +367,9 @@ export default function AdminBarbersPage() {
                       )}
                     </div>
                   </div>
-                  <div className="border-t pt-2">
+                  <div className="border-t pt-2 space-y-2">
                     <BarberReviewsSection barberId={barber.id} reviewCount={barber.reviewCount} />
+                    <BarberPriceEditor barber={barber} />
                   </div>
                 </CardContent>
               </Card>

@@ -314,7 +314,9 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Unauthorized" });
       }
 
-      const updated = await storage.updateBarber(req.params.id, req.body);
+      // Barbers cannot update prices — only admin can
+      const { haircutPrice, beardPrice, homeServicePrice, ...allowedFields } = req.body;
+      const updated = await storage.updateBarber(req.params.id, allowedFields);
       res.json(updated);
     } catch (error) {
       console.error("Error updating barber:", error);
@@ -870,15 +872,56 @@ export async function registerRoutes(
   app.patch('/api/admin/barbers/:id', isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const { isApproved } = req.body;
-      if (typeof isApproved !== 'boolean') {
-        return res.status(400).json({ message: "isApproved must be a boolean" });
+      const { isApproved, haircutPrice, beardPrice, homeServicePrice } = req.body;
+
+      const updateData: Record<string, unknown> = {};
+
+      if (typeof isApproved === 'boolean') {
+        updateData.isApproved = isApproved;
       }
-      const barber = await storage.updateBarber(id, { isApproved });
+      if (haircutPrice !== undefined) {
+        const val = parseFloat(haircutPrice);
+        if (isNaN(val) || val < 0) return res.status(400).json({ message: "Invalid haircutPrice" });
+        updateData.haircutPrice = val.toString();
+      }
+      if (beardPrice !== undefined) {
+        const val = parseFloat(beardPrice);
+        if (isNaN(val) || val < 0) return res.status(400).json({ message: "Invalid beardPrice" });
+        updateData.beardPrice = val.toString();
+      }
+      if (homeServicePrice !== undefined) {
+        if (homeServicePrice === null) {
+          updateData.homeServicePrice = null;
+        } else {
+          const val = parseInt(homeServicePrice, 10);
+          if (isNaN(val) || val < 0) return res.status(400).json({ message: "Invalid homeServicePrice" });
+          updateData.homeServicePrice = val;
+        }
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+
+      const barber = await storage.updateBarber(id, updateData as any);
       if (!barber) return res.status(404).json({ message: "Barber not found" });
+
+      // Keep service prices in sync with barber prices
+      if (haircutPrice !== undefined || beardPrice !== undefined) {
+        const barberServices = await storage.getServices(id);
+        await Promise.all(barberServices.map(service => {
+          const name = service.name.toLowerCase();
+          if (haircutPrice !== undefined && name.includes('haircut'))
+            return storage.updateService(service.id, { price: updateData.haircutPrice as string });
+          if (beardPrice !== undefined && name.includes('beard'))
+            return storage.updateService(service.id, { price: updateData.beardPrice as string });
+          return Promise.resolve();
+        }));
+      }
+
       res.json(barber);
     } catch (error) {
-      console.error("Error updating barber approval:", error);
+      console.error("Error updating barber:", error);
       res.status(500).json({ message: "Failed to update barber" });
     }
   });

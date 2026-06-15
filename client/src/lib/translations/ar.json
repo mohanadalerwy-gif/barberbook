@@ -364,5 +364,12 @@
   "noHomeServiceBarbers": "لا يوجد حلاقون متاحون للخدمة المنزلية قريباً",
   "locationRequired": "يجب مشاركة موقعك للمتابعة",
   "serviceTypeRequired": "يرجى اختيار نوع الخدمة",
-  "dateTimeRequired": "يرجى اختيار التاريخ والوقت"
+  "dateTimeRequired": "يرجى اختيار التاريخ والوقت",
+  "pricesSetByAdmin": "يتم تحديد أسعارك من قِبل الإدارة",
+  "editPrices": "تعديل الأسعار",
+  "savePrices": "حفظ الأسعار",
+  "pricesSaved": "تم حفظ الأسعار",
+  "failedToSavePrices": "فشل حفظ الأسعار",
+  "haircutPriceSAR": "سعر القص (ريال)",
+  "beardPriceSAR": "سعر الذقن (ريال)"
 }

@@ -77,7 +77,6 @@ export default function BarberDashboard() {
   const [hours, setHours] = useState<WorkingHoursData[]>(emptyWorkingHours);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [homeServiceEnabled, setHomeServiceEnabled] = useState(false);
-  const [homeServicePrice, setHomeServicePrice] = useState('');
 
   const barberId = user?.barber?.id;
 
@@ -160,7 +159,6 @@ export default function BarberDashboard() {
       if (!barberId) throw new Error('No barber ID');
       return apiRequest('PATCH', `/api/barbers/${barberId}`, {
         homeServiceEnabled,
-        homeServicePrice: homeServicePrice ? parseInt(homeServicePrice, 10) : null,
       });
     },
     onSuccess: () => {
@@ -176,7 +174,6 @@ export default function BarberDashboard() {
     if (user?.barber) {
       const barber = user.barber as any;
       setHomeServiceEnabled(barber.homeServiceEnabled ?? false);
-      setHomeServicePrice(barber.homeServicePrice ? String(barber.homeServicePrice) : '');
     }
   }, [user?.barber]);
 
@@ -749,21 +746,7 @@ export default function BarberDashboard() {
                   />
                 </div>
 
-                {homeServiceEnabled && (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="home-price">{t('homeServicePrice')}</Label>
-                    <input
-                      id="home-price"
-                      type="number"
-                      min="0"
-                      value={homeServicePrice}
-                      onChange={e => setHomeServicePrice(e.target.value)}
-                      placeholder={t('homeServicePricePlaceholder')}
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      data-testid="input-home-price"
-                    />
-                  </div>
-                )}
+                <p className="text-sm text-muted-foreground">{t('pricesSetByAdmin')}</p>
 
                 <Button
                   className="w-full"

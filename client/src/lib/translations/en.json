@@ -364,5 +364,12 @@
   "noHomeServiceBarbers": "No home service barbers available nearby",
   "locationRequired": "Please share your location to continue",
   "serviceTypeRequired": "Please select a service type",
-  "dateTimeRequired": "Please select a date and time"
+  "dateTimeRequired": "Please select a date and time",
+  "pricesSetByAdmin": "Prices are set by the admin",
+  "editPrices": "Edit Prices",
+  "savePrices": "Save Prices",
+  "pricesSaved": "Prices saved",
+  "failedToSavePrices": "Failed to save prices",
+  "haircutPriceSAR": "Haircut Price (SAR)",
+  "beardPriceSAR": "Beard Price (SAR)"
 }

@@ -14,7 +14,7 @@ import {
   ChevronRight,
   Moon,
   Sun,
-  DollarSign,
+  Lock,
 } from 'lucide-react';
 
 // ── iOS-style toggle ────────────────────────────────────────────────────────
@@ -178,18 +178,9 @@ export default function SettingsPage() {
 
         {isAuthenticated && user?.role === 'barber' && (
           <Card>
-            <CardContent className="p-0">
-              <button
-                className="w-full flex items-center justify-between p-4 hover-elevate rounded-lg"
-                onClick={() => navigate('/price-change-request')}
-                data-testid="button-price-change-request"
-              >
-                <div className="flex items-center gap-3">
-                  <DollarSign className="h-5 w-5 text-muted-foreground" />
-                  <span>{t('requestPriceChange')}</span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
+            <CardContent className="p-4 flex items-center gap-3 text-muted-foreground">
+              <Lock className="h-5 w-5 shrink-0" />
+              <span className="text-sm">{t('pricesSetByAdmin')}</span>
             </CardContent>
           </Card>
         )}
