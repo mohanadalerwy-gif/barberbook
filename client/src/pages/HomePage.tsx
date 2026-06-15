@@ -16,6 +16,8 @@ import { openMapsApp } from '@/lib/maps-utils';
 import type { Barber } from '@/lib/types';
 import lightBg from '@assets/light_background.png';
 import darkBg from '@assets/dark_background.png';
+import logoLight from '@assets/logo-light.png';
+import logoDark from '@assets/logo-dark.png';
 
 interface Booking {
   id: string;
@@ -281,8 +283,9 @@ export default function HomePage() {
               </div>
               <h1 className="text-xl font-bold mt-1">{t('findYourBarber')}</h1>
             </div>
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm">
-              <Scissors className="h-5 w-5 text-primary" />
+            <div className="flex items-center">
+              <img src={logoLight} alt="SHVI" className="block dark:hidden" style={{ maxHeight: 36, width: 'auto' }} />
+              <img src={logoDark} alt="SHVI" className="hidden dark:block" style={{ maxHeight: 36, width: 'auto' }} />
             </div>
           </div>
         </header>

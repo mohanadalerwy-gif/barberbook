@@ -5,11 +5,12 @@ import { Separator } from '@/components/ui/separator';
 import {
   ArrowRight,
   ChevronLeft,
-  Scissors,
   MapPin,
   Home,
   Star,
 } from 'lucide-react';
+import logoLight from '@assets/logo-light.png';
+import logoDark from '@assets/logo-dark.png';
 
 export default function AboutPage() {
   const [, navigate] = useLocation();
@@ -34,11 +35,8 @@ export default function AboutPage() {
 
         {/* Logo + App name + Taglines */}
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Scissors className="h-9 w-9 text-primary" />
-          </div>
-
-          <h1 className="text-4xl font-black tracking-tight">SHVI</h1>
+          <img src={logoLight} alt="SHVI" className="block dark:hidden" style={{ maxWidth: 180, height: 'auto' }} />
+          <img src={logoDark} alt="SHVI" className="hidden dark:block" style={{ maxWidth: 180, height: 'auto' }} />
 
           <div className="space-y-1">
             <p className="text-lg font-semibold text-foreground">
