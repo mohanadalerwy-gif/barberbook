@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import logoLight from '@assets/logo-light.png';
-import logoDark from '@assets/logo-dark.png';
+import logo from '@assets/logo.png';
 
 type Mode = 'login' | 'register';
 
@@ -82,8 +81,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center">
-            <img src={logoLight} alt="SHVI" className="block dark:hidden" style={{ maxWidth: 180, height: 'auto' }} />
-            <img src={logoDark} alt="SHVI" className="hidden dark:block" style={{ maxWidth: 180, height: 'auto' }} />
+            <img src={logo} alt="SHVI" style={{ maxWidth: 180, height: 'auto' }} />
           </div>
           <CardTitle className="text-2xl">
             {mode === 'login' ? t('signIn') : t('createAccount', 'Create account')}

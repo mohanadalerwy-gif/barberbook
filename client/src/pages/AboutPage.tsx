@@ -9,8 +9,7 @@ import {
   Home,
   Star,
 } from 'lucide-react';
-import logoLight from '@assets/logo-light.png';
-import logoDark from '@assets/logo-dark.png';
+import logo from '@assets/logo.png';
 
 export default function AboutPage() {
   const [, navigate] = useLocation();
@@ -35,8 +34,7 @@ export default function AboutPage() {
 
         {/* Logo + App name + Taglines */}
         <div className="flex flex-col items-center gap-4 text-center">
-          <img src={logoLight} alt="SHVI" className="block dark:hidden" style={{ maxWidth: 180, height: 'auto' }} />
-          <img src={logoDark} alt="SHVI" className="hidden dark:block" style={{ maxWidth: 180, height: 'auto' }} />
+          <img src={logo} alt="SHVI" style={{ maxWidth: 180, height: 'auto' }} />
 
           <div className="space-y-1">
             <p className="text-lg font-semibold text-foreground">
