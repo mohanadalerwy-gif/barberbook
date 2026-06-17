@@ -275,7 +275,7 @@ export default function HomePage() {
       <div className="min-h-screen bg-background/70 backdrop-blur-[2px]">
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
           <div className="flex items-center justify-center">
-            <img src={logo} alt="SHVI" style={{ maxHeight: 56, width: 'auto', objectFit: 'contain', background: 'transparent', border: 'none', boxShadow: 'none' }} />
+            <img src={logo} alt="SHVI" style={{ maxHeight: 80, width: 'auto', objectFit: 'contain', background: 'transparent', border: 'none', boxShadow: 'none' }} />
           </div>
         </header>
 
