@@ -128,98 +128,110 @@ function BarberReviewsSection({ barberId, reviewCount }: { barberId: string; rev
   );
 }
 
-function BarberPriceEditor({ barber }: { barber: AdminBarber }) {
+interface AdminService {
+  id: string;
+  name: string;
+  nameAr: string | null;
+  nameEn: string | null;
+  duration: number;
+  price: number;
+  displayPrice: number | null;
+  customerPrice: number | null;
+  barberPrice: number | null;
+}
+
+function ServicePriceRow({ svc, barberId }: { svc: AdminService; barberId: string }) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [haircutPrice, setHaircutPrice] = useState(barber.haircutPrice ?? '');
-  const [beardPrice, setBeardPrice] = useState(barber.beardPrice ?? '');
-  const [homeServicePrice, setHomeServicePrice] = useState(
-    barber.homeServicePrice != null ? String(barber.homeServicePrice) : ''
-  );
+  const [displayPrice, setDisplayPrice] = useState(String(svc.displayPrice ?? svc.price));
+  const [customerPrice, setCustomerPrice] = useState(String(svc.customerPrice ?? svc.price));
+  const [barberPrice, setBarberPrice] = useState(String(svc.barberPrice ?? svc.price));
 
-  const priceMutation = useMutation({
+  const commission = (parseInt(customerPrice) || 0) - (parseInt(barberPrice) || 0);
+  const warn = parseInt(customerPrice) < parseInt(barberPrice);
+
+  const mut = useMutation({
     mutationFn: async () => {
-      const body: Record<string, unknown> = {};
-      if (haircutPrice !== '') body.haircutPrice = haircutPrice;
-      if (beardPrice !== '') body.beardPrice = beardPrice;
-      if (homeServicePrice !== '') body.homeServicePrice = homeServicePrice;
-      const res = await apiRequest('PATCH', `/api/admin/barbers/${barber.id}`, body);
+      const res = await apiRequest('PATCH', `/api/admin/services/${svc.id}`, {
+        displayPrice: parseInt(displayPrice),
+        customerPrice: parseInt(customerPrice),
+        barberPrice: parseInt(barberPrice),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? 'Failed');
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/barbers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/barbers', barberId, 'services'] });
       toast({ title: t('success'), description: t('pricesSaved') });
-      setOpen(false);
     },
     onError: (err: Error) => {
       toast({ title: t('error'), description: err.message || t('failedToSavePrices'), variant: 'destructive' });
     },
   });
 
+  return (
+    <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-1.5 items-center text-xs py-1.5 border-b last:border-0">
+      <span className="font-medium truncate">{svc.nameAr || svc.name}</span>
+      <div className="flex flex-col items-end gap-0.5">
+        <label className="text-[10px] text-muted-foreground">{t('displayPriceLabel')}</label>
+        <input type="number" min="0" value={displayPrice} onChange={e => setDisplayPrice(e.target.value)}
+          className="w-16 h-7 rounded border border-input bg-background px-1.5 text-xs text-center" />
+      </div>
+      <div className="flex flex-col items-end gap-0.5">
+        <label className="text-[10px] text-muted-foreground">{t('customerPriceLabel')}</label>
+        <input type="number" min="0" value={customerPrice} onChange={e => setCustomerPrice(e.target.value)}
+          className="w-16 h-7 rounded border border-input bg-background px-1.5 text-xs text-center" />
+      </div>
+      <div className="flex flex-col items-end gap-0.5">
+        <label className="text-[10px] text-muted-foreground">{t('barberPriceLabel')}</label>
+        <input type="number" min="0" value={barberPrice} onChange={e => setBarberPrice(e.target.value)}
+          className="w-16 h-7 rounded border border-input bg-background px-1.5 text-xs text-center" />
+      </div>
+      <div className="flex flex-col items-end gap-0.5">
+        <label className="text-[10px] text-muted-foreground">{t('commissionLabel')}</label>
+        <span className={`font-semibold ${warn ? 'text-destructive' : 'text-green-600 dark:text-green-400'}`}>
+          {commission} {t('sar')}
+        </span>
+      </div>
+      <Button size="sm" className="h-7 text-xs px-2" disabled={mut.isPending || warn} onClick={() => mut.mutate()}>
+        {mut.isPending ? '...' : t('save')}
+      </Button>
+    </div>
+  );
+}
+
+function BarberServicesEditor({ barber }: { barber: AdminBarber }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+
+  const { data: services = [], isLoading } = useQuery<AdminService[]>({
+    queryKey: ['/api/barbers', barber.id, 'services'],
+    queryFn: () => fetch(`/api/barbers/${barber.id}/services`).then(r => r.json()),
+    enabled: open,
+  });
+
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1 text-xs text-primary hover:underline mt-1"
-      >
+      <button onClick={() => setOpen(true)} className="flex items-center gap-1 text-xs text-primary hover:underline mt-1">
         <Pencil className="h-3 w-3" />
-        {t('editPrices')}
+        {t('editServicePrices')}
       </button>
     );
   }
 
   return (
-    <div className="mt-2 space-y-3 border rounded-lg p-3 bg-muted/30">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">{t('editPrices')}</span>
+    <div className="mt-2 border rounded-lg p-3 bg-muted/20 space-y-1">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold">{t('editServicePrices')}</span>
         <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">{t('haircutPriceSAR')}</label>
-          <input
-            type="number"
-            min="0"
-            value={haircutPrice}
-            onChange={e => setHaircutPrice(e.target.value)}
-            className="w-full h-8 rounded border border-input bg-background px-2 text-sm"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">{t('beardPriceSAR')}</label>
-          <input
-            type="number"
-            min="0"
-            value={beardPrice}
-            onChange={e => setBeardPrice(e.target.value)}
-            className="w-full h-8 rounded border border-input bg-background px-2 text-sm"
-          />
-        </div>
-        {barber.homeServiceEnabled && (
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">{t('homeServicePrice')}</label>
-            <input
-              type="number"
-              min="0"
-              value={homeServicePrice}
-              onChange={e => setHomeServicePrice(e.target.value)}
-              className="w-full h-8 rounded border border-input bg-background px-2 text-sm"
-            />
-          </div>
-        )}
-      </div>
-      <Button
-        size="sm"
-        className="w-full h-7 text-xs"
-        disabled={priceMutation.isPending}
-        onClick={() => priceMutation.mutate()}
-      >
-        {priceMutation.isPending ? t('saving') : t('savePrices')}
-      </Button>
+      {isLoading
+        ? <p className="text-xs text-muted-foreground py-2">{t('loading')}</p>
+        : services.map(svc => <ServicePriceRow key={svc.id} svc={svc} barberId={barber.id} />)
+      }
     </div>
   );
 }
@@ -409,7 +421,7 @@ export default function AdminBarbersPage() {
                   </div>
                   <div className="border-t pt-2 space-y-2">
                     <BarberReviewsSection barberId={barber.id} reviewCount={barber.reviewCount} />
-                    <BarberPriceEditor barber={barber} />
+                    <BarberServicesEditor barber={barber} />
                   </div>
                 </CardContent>
               </Card>

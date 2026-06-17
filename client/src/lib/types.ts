@@ -36,6 +36,9 @@ export interface Service {
   nameEn?: string | null;
   duration: number;
   price: number;
+  displayPrice?: number | null;
+  customerPrice?: number | null;
+  barberPrice?: number | null;
 }
 
 export interface TimeSlot {

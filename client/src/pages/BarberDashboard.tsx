@@ -52,6 +52,7 @@ interface Booking {
   serviceName: string;
   duration: number;
   price: number;
+  barberEarning?: number;
   bookingType?: string;
   customerLocation?: string;
   customerAddress?: string;
@@ -235,19 +236,21 @@ export default function BarberDashboard() {
   const completedBookings = bookings.filter(b => b.status === 'completed');
   const now = new Date();
 
+  const earning = (b: Booking) => b.barberEarning ?? b.price;
+
   const todayEarnings = completedBookings
     .filter(b => isToday(parseISO(b.date)))
-    .reduce((sum, b) => sum + b.price, 0);
+    .reduce((sum, b) => sum + earning(b), 0);
 
   const monthEarnings = completedBookings
     .filter(b => isSameMonth(parseISO(b.date), now))
-    .reduce((sum, b) => sum + b.price, 0);
+    .reduce((sum, b) => sum + earning(b), 0);
 
-  const totalEarnings = completedBookings.reduce((sum, b) => sum + b.price, 0);
+  const totalEarnings = completedBookings.reduce((sum, b) => sum + earning(b), 0);
 
   const earningsByDay = completedBookings.reduce((acc, b) => {
     const day = b.date.split('T')[0];
-    acc[day] = (acc[day] || 0) + b.price;
+    acc[day] = (acc[day] || 0) + earning(b);
     return acc;
   }, {} as Record<string, number>);
   const bestDayEarnings = Object.values(earningsByDay).length > 0
@@ -256,7 +259,7 @@ export default function BarberDashboard() {
 
   const earningsByMonth = completedBookings.reduce((acc, b) => {
     const month = b.date.substring(0, 7);
-    acc[month] = (acc[month] || 0) + b.price;
+    acc[month] = (acc[month] || 0) + earning(b);
     return acc;
   }, {} as Record<string, number>);
   const bestMonthEarnings = Object.values(earningsByMonth).length > 0
@@ -334,7 +337,7 @@ export default function BarberDashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">{t('todayEarnings')}</p>
-                <p className="text-2xl font-bold text-primary">${todayEarnings}</p>
+                <p className="text-2xl font-bold text-primary">{todayEarnings} {t('sar')}</p>
                 <div className="space-y-1">
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
@@ -349,7 +352,7 @@ export default function BarberDashboard() {
               </div>
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">{t('monthEarnings')}</p>
-                <p className="text-2xl font-bold">${monthEarnings}</p>
+                <p className="text-2xl font-bold">{monthEarnings} {t('sar')}</p>
                 <div className="space-y-1">
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
@@ -373,7 +376,7 @@ export default function BarberDashboard() {
             <div className="flex items-center justify-between pt-2 border-t">
               <div>
                 <p className="text-xs text-muted-foreground">{t('allTimeEarnings')}</p>
-                <p className="font-semibold">${totalEarnings}</p>
+                <p className="font-semibold">{totalEarnings} {t('sar')}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">{t('acceptanceRate')}</p>

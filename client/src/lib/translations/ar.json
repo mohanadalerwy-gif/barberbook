@@ -376,5 +376,16 @@
   "demoBarber": "حلاق تجريبي",
   "deleteBarber": "حذف الحلاق",
   "confirmDelete": "تأكيد الحذف",
-  "deleting": "جاري الحذف..."
+  "deleting": "جاري الحذف...",
+  "displayPriceLabel": "السعر المعروض",
+  "customerPriceLabel": "سعر الزبون",
+  "barberPriceLabel": "سعر الحلاق",
+  "commissionLabel": "عمولة المنصة",
+  "editServicePrices": "تعديل أسعار الخدمات",
+  "save": "حفظ",
+  "totalCommission": "إجمالي عمولة المنصة",
+  "monthlyCommission": "عمولة الشهر",
+  "revenueBreakdown": "تفاصيل الإيرادات",
+  "totalCustomerPayments": "إجمالي مدفوعات الزبائن",
+  "totalBarberPayments": "إجمالي مدفوعات الحلاقين"
 }

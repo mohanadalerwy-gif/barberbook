@@ -25,6 +25,10 @@ interface AdminStats {
   today: number;
   totalRevenue: number;
   monthlyRevenue: number;
+  totalCommission: number;
+  totalCustomerPayments: number;
+  totalBarberPayments: number;
+  monthlyCommission: number;
   barberCount: number;
   userCount: number;
   ticketCount: number;
@@ -69,8 +73,8 @@ function fmt(dateStr: string | null) {
   return new Date(dateStr).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function currency(amount: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
+function sar(amount: number) {
+  return `${amount.toLocaleString('ar-SA')} ريال`;
 }
 
 function StatCard({
@@ -288,15 +292,41 @@ export default function AdminPage() {
           />
           <StatCard
             icon={<DollarSign className="h-7 w-7 text-green-600 shrink-0" />}
-            label={t('totalRevenue')}
-            value={dash(stats?.totalRevenue, currency)}
+            label={t('totalCommission')}
+            value={dash(stats?.totalCommission, sar)}
           />
           <StatCard
             icon={<TrendingUp className="h-7 w-7 text-green-600 shrink-0" />}
-            label={t('monthlyRevenue')}
-            value={dash(stats?.monthlyRevenue, currency)}
+            label={t('monthlyCommission')}
+            value={dash(stats?.monthlyCommission, sar)}
           />
         </div>
+
+        {/* Revenue breakdown */}
+        {!statsLoading && (stats?.totalCustomerPayments ?? 0) > 0 && (
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm">{t('revenueBreakdown')}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 text-center text-sm">
+                <div className="space-y-1 bg-muted/40 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">{t('totalCustomerPayments')}</p>
+                  <p className="font-bold text-base">{sar(stats?.totalCustomerPayments ?? 0)}</p>
+                </div>
+                <div className="space-y-1 bg-muted/40 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">{t('totalBarberPayments')}</p>
+                  <p className="font-bold text-base">{sar(stats?.totalBarberPayments ?? 0)}</p>
+                </div>
+                <div className="space-y-1 bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">{t('totalCommission')}</p>
+                  <p className="font-bold text-base text-green-700 dark:text-green-400">{sar(stats?.totalCommission ?? 0)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tabs: Tickets + Tasks */}
         <Tabs defaultValue="tickets">

@@ -54,7 +54,7 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   getAllBarbersAdmin(): Promise<(Barber & { user: User })[]>;
   getBookingStats(): Promise<{ total: number; today: number }>;
-  getRevenueStats(): Promise<{ totalRevenue: number; monthlyRevenue: number }>;
+  getRevenueStats(): Promise<{ totalRevenue: number; monthlyRevenue: number; totalCommission: number; totalCustomerPayments: number; totalBarberPayments: number; monthlyCommission: number }>;
   getBarberReviews(barberId: string): Promise<{ rating: number; review: string | null; customerName: string | null; date: string; createdAt: string | null }[]>;
   updateTicketStatus(id: string, status: string): Promise<SupportTicket | undefined>;
 
@@ -82,6 +82,7 @@ export interface IStorage {
     customerName: string; customerEmail: string | null;
     barberName: string; barberShopName: string | null;
     serviceName: string; servicePrice: string;
+    snapshotCustomerPrice: number | null; snapshotBarberPrice: number | null;
   }[]>;
   getUsersDetailed(): Promise<(User & {
     lastBooking: { serviceName: string; date: string; barberName: string; barberShopName: string | null } | null
@@ -400,7 +401,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getRevenueStats(): Promise<{ totalRevenue: number; monthlyRevenue: number }> {
+  async getRevenueStats(): Promise<{ totalRevenue: number; monthlyRevenue: number; totalCommission: number; totalCustomerPayments: number; totalBarberPayments: number; monthlyCommission: number }> {
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -409,11 +410,17 @@ export class DatabaseStorage implements IStorage {
     const monthEnd = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
 
     const [totalResult, monthlyResult] = await Promise.all([
-      db.select({ revenue: sql<string>`COALESCE(SUM(${services.price}), 0)` })
+      db.select({
+        customerPayments: sql<string>`COALESCE(SUM(COALESCE(${bookings.snapshotCustomerPrice}::numeric, ${services.price})), 0)`,
+        barberPayments: sql<string>`COALESCE(SUM(COALESCE(${bookings.snapshotBarberPrice}::numeric, ${services.price})), 0)`,
+        commission: sql<string>`COALESCE(SUM(COALESCE(${bookings.snapshotCustomerPrice}, 0) - COALESCE(${bookings.snapshotBarberPrice}, 0)), 0)`,
+      })
         .from(bookings)
         .innerJoin(services, eq(bookings.serviceId, services.id))
         .where(eq(bookings.status, 'completed')),
-      db.select({ revenue: sql<string>`COALESCE(SUM(${services.price}), 0)` })
+      db.select({
+        commission: sql<string>`COALESCE(SUM(COALESCE(${bookings.snapshotCustomerPrice}, 0) - COALESCE(${bookings.snapshotBarberPrice}, 0)), 0)`,
+      })
         .from(bookings)
         .innerJoin(services, eq(bookings.serviceId, services.id))
         .where(and(
@@ -423,9 +430,18 @@ export class DatabaseStorage implements IStorage {
         )),
     ]);
 
+    const totalCustomerPayments = parseFloat(totalResult[0]?.customerPayments ?? '0');
+    const totalBarberPayments = parseFloat(totalResult[0]?.barberPayments ?? '0');
+    const totalCommission = parseFloat(totalResult[0]?.commission ?? '0');
+    const monthlyCommission = parseFloat(monthlyResult[0]?.commission ?? '0');
+
     return {
-      totalRevenue: parseFloat(totalResult[0]?.revenue ?? '0'),
-      monthlyRevenue: parseFloat(monthlyResult[0]?.revenue ?? '0'),
+      totalRevenue: totalCustomerPayments,
+      monthlyRevenue: monthlyCommission,
+      totalCommission,
+      totalCustomerPayments,
+      totalBarberPayments,
+      monthlyCommission,
     };
   }
 
@@ -604,6 +620,8 @@ export class DatabaseStorage implements IStorage {
         barberShopName: barber?.shopName ?? null,
         serviceName: service?.name ?? 'Unknown',
         servicePrice: service?.price ?? '0',
+        snapshotCustomerPrice: b.snapshotCustomerPrice ?? null,
+        snapshotBarberPrice: b.snapshotBarberPrice ?? null,
       };
     });
   }

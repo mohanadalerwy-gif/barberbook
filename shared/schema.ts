@@ -81,6 +81,9 @@ export const services = pgTable("services", {
   nameEn: text("name_en"),
   duration: integer("duration").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  displayPrice: integer("display_price"),
+  customerPrice: integer("customer_price"),
+  barberPrice: integer("barber_price"),
 });
 
 export const workingHours = pgTable("working_hours", {
@@ -107,6 +110,9 @@ export const bookings = pgTable("bookings", {
   customerAddress: text("customer_address"),
   rating: integer("rating"),
   review: text("review"),
+  snapshotDisplayPrice: integer("snapshot_display_price"),
+  snapshotCustomerPrice: integer("snapshot_customer_price"),
+  snapshotBarberPrice: integer("snapshot_barber_price"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -202,6 +202,9 @@ export async function registerRoutes(
           nameEn: s.nameEn || null,
           duration: s.duration,
           price: parseFloat(s.price),
+          displayPrice: s.displayPrice ?? null,
+          customerPrice: s.customerPrice ?? null,
+          barberPrice: s.barberPrice ?? null,
         })),
         workingHours,
       });
@@ -222,6 +225,9 @@ export async function registerRoutes(
         nameEn: s.nameEn || null,
         duration: s.duration,
         price: parseFloat(s.price),
+        displayPrice: s.displayPrice ?? null,
+        customerPrice: s.customerPrice ?? null,
+        barberPrice: s.barberPrice ?? null,
       })));
     } catch (error) {
       console.error("Error fetching services:", error);
@@ -424,6 +430,39 @@ export async function registerRoutes(
     }
   });
 
+  app.patch('/api/admin/services/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { displayPrice, customerPrice, barberPrice } = req.body;
+
+      const updateData: Record<string, unknown> = {};
+      for (const [key, val] of [['displayPrice', displayPrice], ['customerPrice', customerPrice], ['barberPrice', barberPrice]] as const) {
+        if (val !== undefined) {
+          const n = parseInt(String(val), 10);
+          if (isNaN(n) || n < 0) return res.status(400).json({ message: `Invalid ${key}` });
+          updateData[key] = n;
+        }
+      }
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+      if (
+        updateData.customerPrice !== undefined &&
+        updateData.barberPrice !== undefined &&
+        (updateData.customerPrice as number) < (updateData.barberPrice as number)
+      ) {
+        return res.status(400).json({ message: "customerPrice must be ≥ barberPrice" });
+      }
+
+      const service = await storage.updateService(id, updateData as any);
+      if (!service) return res.status(404).json({ message: "Service not found" });
+      res.json(service);
+    } catch (error) {
+      console.error("Error updating service prices:", error);
+      res.status(500).json({ message: "Failed to update service prices" });
+    }
+  });
+
   app.delete('/api/services/:id', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -451,12 +490,15 @@ export async function registerRoutes(
       const userId = req.user.claims.sub;
       const { serviceIds, ...bodyRest } = req.body;
 
+      const primaryServiceId = Array.isArray(serviceIds) && serviceIds.length > 0
+        ? (bodyRest.serviceId || serviceIds[0])
+        : bodyRest.serviceId;
+
       const result = insertBookingSchema.safeParse({
         ...bodyRest,
         customerId: userId,
-        // Multi-service: first ID becomes primary serviceId, all stored as JSON
         ...(Array.isArray(serviceIds) && serviceIds.length > 0 && {
-          serviceId: bodyRest.serviceId || serviceIds[0],
+          serviceId: primaryServiceId,
           serviceIds: JSON.stringify(serviceIds),
         }),
       });
@@ -471,8 +513,8 @@ export async function registerRoutes(
       );
 
       const timeConflict = existingBookings.some(
-        b => b.time === result.data.time && 
-            b.status !== 'cancelled' && 
+        b => b.time === result.data.time &&
+            b.status !== 'cancelled' &&
             b.status !== 'declined'
       );
 
@@ -480,7 +522,22 @@ export async function registerRoutes(
         return res.status(409).json({ message: "Time slot is no longer available" });
       }
 
-      const booking = await storage.createBooking(result.data);
+      // Snapshot prices from services at time of booking
+      const allServiceIds: string[] = Array.isArray(serviceIds) && serviceIds.length > 0
+        ? serviceIds
+        : [primaryServiceId];
+      const allServices = await Promise.all(allServiceIds.map(id => storage.getService(id)));
+      const validServices = allServices.filter(Boolean);
+      const snapshotDisplayPrice = validServices.reduce((s, svc) => s + (svc!.displayPrice ?? Math.round(parseFloat(svc!.price))), 0);
+      const snapshotCustomerPrice = validServices.reduce((s, svc) => s + (svc!.customerPrice ?? Math.round(parseFloat(svc!.price))), 0);
+      const snapshotBarberPrice = validServices.reduce((s, svc) => s + (svc!.barberPrice ?? Math.round(parseFloat(svc!.price))), 0);
+
+      const booking = await storage.createBooking({
+        ...result.data,
+        snapshotDisplayPrice,
+        snapshotCustomerPrice,
+        snapshotBarberPrice,
+      });
       res.status(201).json(booking);
     } catch (error) {
       console.error("Error creating booking:", error);
@@ -525,6 +582,10 @@ export async function registerRoutes(
           }
           const allServices = await Promise.all(allServiceIds.map(id => storage.getService(id)));
 
+          const basePrice = booking.bookingType === 'home' && barber?.homeServicePrice
+            ? barber.homeServicePrice
+            : allServices.reduce((sum, s) => sum + parseFloat(s?.price || '0'), 0);
+
           return {
             ...booking,
             barberName: barberUser
@@ -539,9 +600,9 @@ export async function registerRoutes(
             customerPhone: customer?.phone,
             serviceName: allServices.filter(Boolean).map(s => s!.name).join(' + ') || 'Unknown',
             duration: allServices.reduce((sum, s) => sum + (s?.duration || 0), 0),
-            price: booking.bookingType === 'home' && barber?.homeServicePrice
-              ? barber.homeServicePrice
-              : allServices.reduce((sum, s) => sum + parseFloat(s?.price || '0'), 0),
+            price: booking.snapshotCustomerPrice ?? basePrice,
+            barberEarning: booking.snapshotBarberPrice
+              ?? allServices.reduce((sum, s) => sum + (s?.barberPrice ?? Math.round(parseFloat(s?.price || '0'))), 0),
           };
         })
       );
@@ -1216,6 +1277,9 @@ export async function registerRoutes(
             bookingType: 'home',
             customerLocation,
             customerAddress: customerAddress || null,
+            snapshotDisplayPrice: service.displayPrice ?? Math.round(parseFloat(service.price)),
+            snapshotCustomerPrice: service.customerPrice ?? Math.round(parseFloat(service.price)),
+            snapshotBarberPrice: service.barberPrice ?? Math.round(parseFloat(service.price)),
           });
         })
       );

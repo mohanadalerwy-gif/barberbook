@@ -376,5 +376,16 @@
   "demoBarber": "Demo Barber",
   "deleteBarber": "Delete Barber",
   "confirmDelete": "Confirm Delete",
-  "deleting": "Deleting..."
+  "deleting": "Deleting...",
+  "displayPriceLabel": "Display Price",
+  "customerPriceLabel": "Customer Price",
+  "barberPriceLabel": "Barber Price",
+  "commissionLabel": "Commission",
+  "editServicePrices": "Edit Service Prices",
+  "save": "Save",
+  "totalCommission": "Total Platform Commission",
+  "monthlyCommission": "Monthly Commission",
+  "revenueBreakdown": "Revenue Breakdown",
+  "totalCustomerPayments": "Total Customer Payments",
+  "totalBarberPayments": "Total Barber Payments"
 }
