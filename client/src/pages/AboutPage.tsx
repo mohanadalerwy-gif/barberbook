@@ -9,7 +9,7 @@ import {
   Home,
   Star,
 } from 'lucide-react';
-import logo from '@assets/logo.png';
+import logo from '../assets/logo.png';
 
 export default function AboutPage() {
   const [, navigate] = useLocation();

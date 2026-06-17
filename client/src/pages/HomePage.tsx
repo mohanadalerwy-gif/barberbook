@@ -16,7 +16,7 @@ import { openMapsApp } from '@/lib/maps-utils';
 import type { Barber } from '@/lib/types';
 import lightBg from '@assets/light_background.png';
 import darkBg from '@assets/dark_background.png';
-import logo from '@assets/logo.png';
+import logo from '../assets/logo.png';
 
 interface Booking {
   id: string;
