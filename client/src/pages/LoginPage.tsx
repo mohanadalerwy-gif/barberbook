@@ -81,7 +81,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center">
-            <img src={logo} alt="SHVI" style={{ maxWidth: 180, height: 'auto' }} />
+            <img src={logo} alt="SHVI" style={{ maxWidth: 180, height: 'auto', objectFit: 'contain', background: 'transparent', border: 'none', boxShadow: 'none' }} />
           </div>
           <CardTitle className="text-2xl">
             {mode === 'login' ? t('signIn') : t('createAccount', 'Create account')}

@@ -283,7 +283,7 @@ export default function HomePage() {
               <h1 className="text-xl font-bold mt-1">{t('findYourBarber')}</h1>
             </div>
             <div className="flex items-center">
-              <img src={logo} alt="SHVI" style={{ maxHeight: 36, width: 'auto' }} />
+              <img src={logo} alt="SHVI" style={{ maxHeight: 40, width: 'auto', objectFit: 'contain', background: 'transparent', border: 'none', boxShadow: 'none' }} />
             </div>
           </div>
         </header>
