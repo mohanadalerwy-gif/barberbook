@@ -68,7 +68,15 @@ export default function LoginPage() {
       }
 
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-      navigate('/');
+      const me = await queryClient.fetchQuery<{ role?: string }>({
+        queryKey: ['/api/auth/user'],
+        staleTime: 0,
+      });
+      if (me?.role === 'employee') {
+        navigate('/employee');
+      } else {
+        navigate('/');
+      }
     } catch {
       setError(t('networkError'));
     } finally {

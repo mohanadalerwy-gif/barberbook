@@ -387,5 +387,13 @@
   "monthlyCommission": "Monthly Commission",
   "revenueBreakdown": "Revenue Breakdown",
   "totalCustomerPayments": "Total Customer Payments",
-  "totalBarberPayments": "Total Barber Payments"
+  "totalBarberPayments": "Total Barber Payments",
+  "totalTasks": "Total Tasks",
+  "completedTasks": "Completed",
+  "remainingTasks": "Remaining",
+  "completionRate": "Completion Rate",
+  "filterAll": "All",
+  "filterPending": "Pending",
+  "filterCompleted": "Completed",
+  "employeeDashboard": "Employee Dashboard"
 }

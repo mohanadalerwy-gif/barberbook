@@ -222,6 +222,12 @@ export default function HomePage() {
   }, [i18n.language]);
 
   useEffect(() => {
+    if (user?.role === 'employee') {
+      navigate('/employee');
+    }
+  }, [user?.role]);
+
+  useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {

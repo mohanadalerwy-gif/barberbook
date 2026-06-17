@@ -82,6 +82,7 @@ function AppShell() {
           <Route path="/admin/users" component={AdminUsersPage} />
           <Route path="/admin/bookings" component={AdminBookingsPage} />
           <Route path="/my-tasks" component={EmployeeTasksPage} />
+          <Route path="/employee" component={EmployeeTasksPage} />
           <Route path="/home-service" component={HomeServiceBooking} />
           <Route path="/privacy-policy" component={PrivacyPolicy} />
           <Route path="/privacy" component={PrivacyPolicy} />

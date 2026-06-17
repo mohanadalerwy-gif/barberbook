@@ -387,5 +387,13 @@
   "monthlyCommission": "عمولة الشهر",
   "revenueBreakdown": "تفاصيل الإيرادات",
   "totalCustomerPayments": "إجمالي مدفوعات الزبائن",
-  "totalBarberPayments": "إجمالي مدفوعات الحلاقين"
+  "totalBarberPayments": "إجمالي مدفوعات الحلاقين",
+  "totalTasks": "إجمالي المهام",
+  "completedTasks": "المهام المكتملة",
+  "remainingTasks": "المهام المتبقية",
+  "completionRate": "نسبة الإنجاز",
+  "filterAll": "الكل",
+  "filterPending": "المتبقية",
+  "filterCompleted": "المكتملة",
+  "employeeDashboard": "لوحة الموظف"
 }
