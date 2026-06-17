@@ -285,6 +285,7 @@
   "done": "منجز",
   "markAsDone": "تعليم كمنجز",
   "taskMarkedDone": "تم تعليم المهمة كمنجزة",
+  "errorOccurred": "حدث خطأ. يرجى المحاولة مرة أخرى.",
   "myTasks": "مهامي",
   "noTasksAssigned": "لا توجد مهام معينة لك",
   "noTasksFound": "لا توجد مهام",

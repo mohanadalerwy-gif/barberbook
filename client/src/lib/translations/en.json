@@ -285,6 +285,7 @@
   "done": "Done",
   "markAsDone": "Mark as Done",
   "taskMarkedDone": "Task marked as done",
+  "errorOccurred": "An error occurred. Please try again.",
   "myTasks": "My Tasks",
   "noTasksAssigned": "No tasks assigned to you",
   "noTasksFound": "No tasks found",

@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, ClipboardList, ShieldAlert } from 'lucide-react';
 import logo from '../assets/logo.png';
+import { apiRequest } from '@/lib/queryClient';
 
 interface EmployeeTask {
   id: string;
@@ -47,16 +48,15 @@ export default function EmployeeTasksPage() {
 
   const doneMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/tasks/${id}/done`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!res.ok) throw new Error('Failed');
+      const res = await apiRequest('PATCH', `/api/tasks/${id}/done`);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
       toast({ title: t('taskMarkedDone') });
+    },
+    onError: () => {
+      toast({ title: t('errorOccurred'), variant: 'destructive' });
     },
   });
 
