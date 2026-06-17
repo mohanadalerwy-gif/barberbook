@@ -274,17 +274,8 @@ export default function HomePage() {
     >
       <div className="min-h-screen bg-background/70 backdrop-blur-[2px]">
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span className="text-sm">{t('currentLocation')}</span>
-              </div>
-              <h1 className="text-xl font-bold mt-1">{t('findYourBarber')}</h1>
-            </div>
-            <div className="flex items-center">
-              <img src={logo} alt="SHVI" style={{ maxHeight: 56, width: 'auto', objectFit: 'contain', background: 'transparent', border: 'none', boxShadow: 'none' }} />
-            </div>
+          <div className="flex items-center justify-center">
+            <img src={logo} alt="SHVI" style={{ maxHeight: 56, width: 'auto', objectFit: 'contain', background: 'transparent', border: 'none', boxShadow: 'none' }} />
           </div>
         </header>
 
