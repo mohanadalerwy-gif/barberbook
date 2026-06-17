@@ -86,13 +86,18 @@ export default function BarberDashboard() {
   }, [i18n.language]);
 
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || user?.role !== 'barber')) {
+    if (authLoading) return;
+    if (!isAuthenticated || user?.role !== 'barber') {
       toast({
         title: t('accessDenied'),
         description: t('barberAccessRequired'),
         variant: "destructive",
       });
       navigate('/profile');
+      return;
+    }
+    if (user.barber?.isApproved !== true) {
+      navigate('/pending-approval');
     }
   }, [authLoading, isAuthenticated, user, navigate, toast, t]);
 

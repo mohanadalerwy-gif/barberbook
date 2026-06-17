@@ -68,12 +68,20 @@ export default function LoginPage() {
       }
 
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-      const me = await queryClient.fetchQuery<{ role?: string }>({
+      const me = await queryClient.fetchQuery<{ role?: string; barber?: { isApproved?: boolean | null } | null }>({
         queryKey: ['/api/auth/user'],
         staleTime: 0,
       });
-      if (me?.role === 'employee') {
+      if (me?.role === 'admin') {
+        navigate('/panel-d37eb5xcwv');
+      } else if (me?.role === 'employee') {
         navigate('/employee');
+      } else if (me?.role === 'barber') {
+        if (me.barber?.isApproved === true) {
+          navigate('/barber-dashboard');
+        } else {
+          navigate('/pending-approval');
+        }
       } else {
         navigate('/');
       }

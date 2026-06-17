@@ -396,5 +396,8 @@
   "filterAll": "All",
   "filterPending": "Pending",
   "filterCompleted": "Completed",
-  "employeeDashboard": "Employee Dashboard"
+  "employeeDashboard": "Employee Dashboard",
+  "pendingApprovalTitle": "Account Under Review",
+  "pendingApprovalMessage": "Your account will be reviewed and approved soon by the administration. Thank you for joining SHVI.",
+  "pendingApprovalSubtitle": "Pending Approval"
 }

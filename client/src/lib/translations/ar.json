@@ -396,5 +396,8 @@
   "filterAll": "الكل",
   "filterPending": "المتبقية",
   "filterCompleted": "المكتملة",
-  "employeeDashboard": "لوحة الموظف"
+  "employeeDashboard": "لوحة الموظف",
+  "pendingApprovalTitle": "حسابك قيد المراجعة",
+  "pendingApprovalMessage": "سيتم مراجعة حسابك واعتماده قريباً من قبل الإدارة. شكراً لانضمامك إلى شيفي.",
+  "pendingApprovalSubtitle": "في انتظار الموافقة"
 }

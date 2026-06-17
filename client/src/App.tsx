@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from 'react-i18next';
@@ -33,6 +33,24 @@ import HomeServiceBooking from "@/pages/HomeServiceBooking";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import AboutPage from "@/pages/AboutPage";
+import PendingApprovalPage from "@/pages/PendingApprovalPage";
+import { useAuth } from "@/hooks/useAuth";
+
+function RoleRedirect() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) return null;
+  if (!user) return <HomePage />;
+
+  if (user.role === 'admin') return <Redirect to="/panel-d37eb5xcwv" />;
+  if (user.role === 'employee') return <Redirect to="/employee" />;
+  if (user.role === 'barber') {
+    if (user.barber?.isApproved === true) return <Redirect to="/barber-dashboard" />;
+    return <Redirect to="/pending-approval" />;
+  }
+
+  return <HomePage />;
+}
 
 function AppShell() {
   const [location] = useLocation();
@@ -61,7 +79,7 @@ function AppShell() {
         className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain"
       >
         <Switch>
-          <Route path="/" component={HomePage} />
+          <Route path="/" component={RoleRedirect} />
           <Route path="/book" component={BookPage} />
           <Route path="/book-by-barber" component={BookByBarberPage} />
           <Route path="/nearby" component={NearbyPage} />
@@ -71,6 +89,7 @@ function AppShell() {
           <Route path="/settings" component={SettingsPage} />
           <Route path="/barber-register" component={BarberRegisterPage} />
           <Route path="/barber-dashboard" component={BarberDashboard} />
+          <Route path="/pending-approval" component={PendingApprovalPage} />
           <Route path="/support" component={SupportCenterPage} />
           <Route path="/price-change-request" component={PriceChangeRequestPage} />
           <Route path="/login" component={LoginPage} />
@@ -81,6 +100,10 @@ function AppShell() {
           <Route path="/admin/barbers" component={AdminBarbersPage} />
           <Route path="/admin/users" component={AdminUsersPage} />
           <Route path="/admin/bookings" component={AdminBookingsPage} />
+          <Route path="/panel-d37eb5xcwv" component={AdminPage} />
+          <Route path="/panel-d37eb5xcwv/barbers" component={AdminBarbersPage} />
+          <Route path="/panel-d37eb5xcwv/users" component={AdminUsersPage} />
+          <Route path="/panel-d37eb5xcwv/bookings" component={AdminBookingsPage} />
           <Route path="/my-tasks" component={EmployeeTasksPage} />
           <Route path="/employee" component={EmployeeTasksPage} />
           <Route path="/home-service" component={HomeServiceBooking} />
