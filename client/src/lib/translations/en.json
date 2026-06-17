@@ -371,5 +371,10 @@
   "pricesSaved": "Prices saved",
   "failedToSavePrices": "Failed to save prices",
   "haircutPriceSAR": "Haircut Price (SAR)",
-  "beardPriceSAR": "Beard Price (SAR)"
+  "beardPriceSAR": "Beard Price (SAR)",
+  "sar": "SAR",
+  "demoBarber": "Demo Barber",
+  "deleteBarber": "Delete Barber",
+  "confirmDelete": "Confirm Delete",
+  "deleting": "Deleting..."
 }

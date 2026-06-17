@@ -12,7 +12,7 @@ import { apiRequest } from '@/lib/queryClient';
 import i18n from '@/lib/i18n';
 import {
   ArrowLeft, CheckCircle, XCircle, Star,
-  ChevronDown, ChevronUp, ShieldAlert, Pencil, X,
+  ChevronDown, ChevronUp, ShieldAlert, Pencil, X, Trash2,
 } from 'lucide-react';
 
 interface AdminBarber {
@@ -24,6 +24,7 @@ interface AdminBarber {
   rating: string | null;
   reviewCount: number | null;
   isApproved: boolean | null;
+  isDemo: boolean | null;
   createdAt: string | null;
   haircutPrice: string | null;
   beardPrice: string | null;
@@ -229,6 +230,7 @@ export default function AdminBarbersPage() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const [approveError, setApproveError] = useState<Record<string, string>>({});
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const isAdmin = isAuthenticated && user?.role === 'admin';
 
@@ -267,6 +269,19 @@ export default function AdminBarbersPage() {
       return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/admin/price-change-requests'] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest('DELETE', `/api/admin/barbers/${id}`);
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? 'Failed');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/barbers'] });
+      setDeletingId(null);
+    },
+    onError: () => setDeletingId(null),
   });
 
   if (!isAuthenticated || !isAdmin) {
@@ -316,6 +331,11 @@ export default function AdminBarbersPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-semibold">{barber.shopName || t('unnamedShop')}</p>
                         <StatusBadge approved={barber.isApproved} />
+                        {barber.isDemo && (
+                          <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 text-xs">
+                            {t('demoBarber')}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {[barber.user.firstName, barber.user.lastName].filter(Boolean).join(' ') || t('noName')}
@@ -343,7 +363,7 @@ export default function AdminBarbersPage() {
                         <p className="text-xs text-destructive">{approveError[barber.id]}</p>
                       )}
                     </div>
-                    <div className="shrink-0">
+                    <div className="shrink-0 flex flex-col gap-1 items-end">
                       {barber.isApproved !== true ? (
                         <Button size="sm" variant="outline"
                           className="text-green-700 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/20"
@@ -364,6 +384,26 @@ export default function AdminBarbersPage() {
                           }}>
                           <XCircle className="h-4 w-4 mr-1" />{t('reject')}
                         </Button>
+                      )}
+                      {barber.isDemo && (
+                        deletingId === barber.id ? (
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="destructive"
+                              disabled={deleteMutation.isPending}
+                              onClick={() => deleteMutation.mutate(barber.id)}>
+                              {deleteMutation.isPending ? t('deleting') : t('confirmDelete')}
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setDeletingId(null)}>
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button size="sm" variant="ghost"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => setDeletingId(barber.id)}>
+                            <Trash2 className="h-3.5 w-3.5 mr-1" />{t('deleteBarber')}
+                          </Button>
+                        )
                       )}
                     </div>
                   </div>
@@ -402,17 +442,17 @@ export default function AdminBarbersPage() {
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">{t('haircut')}</p>
                         <p>
-                          <span className="line-through text-muted-foreground">${req.oldHaircutPrice}</span>
+                          <span className="line-through text-muted-foreground">{req.oldHaircutPrice} {t('sar')}</span>
                           <span className="mx-1 text-muted-foreground">→</span>
-                          <span className="font-semibold text-green-700 dark:text-green-400">${req.newHaircutPrice}</span>
+                          <span className="font-semibold text-green-700 dark:text-green-400">{req.newHaircutPrice} {t('sar')}</span>
                         </p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">{t('beardTrim')}</p>
                         <p>
-                          <span className="line-through text-muted-foreground">${req.oldBeardPrice}</span>
+                          <span className="line-through text-muted-foreground">{req.oldBeardPrice} {t('sar')}</span>
                           <span className="mx-1 text-muted-foreground">→</span>
-                          <span className="font-semibold text-green-700 dark:text-green-400">${req.newBeardPrice}</span>
+                          <span className="font-semibold text-green-700 dark:text-green-400">{req.newBeardPrice} {t('sar')}</span>
                         </p>
                       </div>
                     </div>

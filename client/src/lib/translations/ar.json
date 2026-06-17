@@ -371,5 +371,10 @@
   "pricesSaved": "تم حفظ الأسعار",
   "failedToSavePrices": "فشل حفظ الأسعار",
   "haircutPriceSAR": "سعر القص (ريال)",
-  "beardPriceSAR": "سعر الذقن (ريال)"
+  "beardPriceSAR": "سعر الذقن (ريال)",
+  "sar": "ريال",
+  "demoBarber": "حلاق تجريبي",
+  "deleteBarber": "حذف الحلاق",
+  "confirmDelete": "تأكيد الحذف",
+  "deleting": "جاري الحذف..."
 }

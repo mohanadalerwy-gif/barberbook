@@ -198,6 +198,8 @@ export async function registerRoutes(
           id: s.id,
           barberId: s.barberId,
           name: s.name,
+          nameAr: s.nameAr || null,
+          nameEn: s.nameEn || null,
           duration: s.duration,
           price: parseFloat(s.price),
         })),
@@ -216,6 +218,8 @@ export async function registerRoutes(
         id: s.id,
         barberId: s.barberId,
         name: s.name,
+        nameAr: s.nameAr || null,
+        nameEn: s.nameEn || null,
         duration: s.duration,
         price: parseFloat(s.price),
       })));
@@ -923,6 +927,19 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating barber:", error);
       res.status(500).json({ message: "Failed to update barber" });
+    }
+  });
+
+  app.delete('/api/admin/barbers/:id', isAdmin, async (req, res) => {
+    try {
+      const barber = await storage.getBarber(req.params.id);
+      if (!barber) return res.status(404).json({ message: "Barber not found" });
+      if (!barber.isDemo) return res.status(403).json({ message: "Only demo barbers can be deleted" });
+      await storage.deleteBarber(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting barber:", error);
+      res.status(500).json({ message: "Failed to delete barber" });
     }
   });
 

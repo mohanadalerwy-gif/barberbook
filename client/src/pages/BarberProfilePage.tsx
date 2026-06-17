@@ -259,7 +259,7 @@ export default function BarberProfilePage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('total')}</span>
-                  <span className="font-medium">${totalPrice.toFixed(2)}</span>
+                  <span className="font-medium">{totalPrice.toFixed(2)} {t('sar')}</span>
                 </div>
               </div>
             </CardContent>
@@ -371,14 +371,16 @@ export default function BarberProfilePage() {
                             {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
                           </div>
                           <div>
-                            <p className="font-medium">{service.name}</p>
+                            <p className="font-medium">
+                              {i18n.language === 'ar' ? (service.nameAr || service.name) : (service.nameEn || service.name)}
+                            </p>
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
                               <Clock className="h-3.5 w-3.5" />
                               <span>{service.duration} {t('min')}</span>
                             </div>
                           </div>
                         </div>
-                        <span className="font-semibold shrink-0">${service.price}</span>
+                        <span className="font-semibold shrink-0">{service.price} {t('sar')}</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -398,7 +400,7 @@ export default function BarberProfilePage() {
                 <span className="text-sm text-muted-foreground">
                   {selectedServices.length} service{selectedServices.length > 1 ? 's' : ''} &middot; {totalDuration} min
                 </span>
-                <span className="font-semibold">${totalPrice.toFixed(2)}</span>
+                <span className="font-semibold">{totalPrice.toFixed(2)} {t('sar')}</span>
               </div>
             )}
 
@@ -500,7 +502,9 @@ export default function BarberProfilePage() {
                       <span className="text-muted-foreground">
                         {i === 0 ? t('service') : ''}
                       </span>
-                      <span className="font-medium">{s.name} — ${s.price}</span>
+                      <span className="font-medium">
+                        {i18n.language === 'ar' ? (s.nameAr || s.name) : (s.nameEn || s.name)} — {s.price} {t('sar')}
+                      </span>
                     </div>
                   ))}
 
@@ -519,7 +523,7 @@ export default function BarberProfilePage() {
                   <Separator />
                   <div className="flex justify-between text-base">
                     <span className="font-medium">{t('total')}</span>
-                    <span className="font-bold">${totalPrice.toFixed(2)}</span>
+                    <span className="font-bold">{totalPrice.toFixed(2)} {t('sar')}</span>
                   </div>
                 </div>
               </CardContent>

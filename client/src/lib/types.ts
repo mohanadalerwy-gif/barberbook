@@ -32,6 +32,8 @@ export interface Service {
   id: string;
   barberId: string;
   name: string;
+  nameAr?: string | null;
+  nameEn?: string | null;
   duration: number;
   price: number;
 }

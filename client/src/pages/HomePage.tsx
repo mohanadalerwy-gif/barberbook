@@ -148,7 +148,7 @@ function BookingCard({ booking }: { booking: Booking }) {
               {(booking.status === 'confirmed' || booking.status === 'accepted') && <CheckCircle className="h-3 w-3 mr-1" />}
               {t(booking.status)}
             </Badge>
-            <p className="text-sm font-medium mt-2">${booking.price}</p>
+            <p className="text-sm font-medium mt-2">{booking.price} {t('sar')}</p>
           </div>
         </div>
 

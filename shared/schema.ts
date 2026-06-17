@@ -69,6 +69,7 @@ export const barbers = pgTable("barbers", {
   homeServicePrice: integer("home_service_price"),
   rating: decimal("rating", { precision: 2, scale: 1 }).default("0"),
   reviewCount: integer("review_count").default(0),
+  isDemo: boolean("is_demo").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -76,6 +77,8 @@ export const services = pgTable("services", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   barberId: varchar("barber_id").notNull().references(() => barbers.id),
   name: text("name").notNull(),
+  nameAr: text("name_ar"),
+  nameEn: text("name_en"),
   duration: integer("duration").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
 });

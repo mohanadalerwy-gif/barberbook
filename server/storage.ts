@@ -26,6 +26,7 @@ export interface IStorage {
   getNearbyBarbers(lat: number, lng: number, radiusKm: number): Promise<(Barber & { user: User; distance: number })[]>;
   createBarber(barber: InsertBarber): Promise<Barber>;
   updateBarber(id: string, data: Partial<InsertBarber>): Promise<Barber | undefined>;
+  deleteBarber(id: string): Promise<void>;
 
   getServices(barberId: string): Promise<Service[]>;
   getService(id: string): Promise<Service | undefined>;
@@ -244,6 +245,19 @@ export class DatabaseStorage implements IStorage {
   async updateBarber(id: string, data: Partial<InsertBarber>): Promise<Barber | undefined> {
     const [barber] = await db.update(barbers).set(data).where(eq(barbers.id, id)).returning();
     return barber || undefined;
+  }
+
+  async deleteBarber(id: string): Promise<void> {
+    const [barber] = await db.select().from(barbers).where(eq(barbers.id, id));
+    if (!barber) return;
+    await db.delete(bookings).where(eq(bookings.barberId, id));
+    await db.delete(priceChangeRequests).where(eq(priceChangeRequests.barberId, id));
+    await db.delete(services).where(eq(services.barberId, id));
+    await db.delete(workingHours).where(eq(workingHours.barberId, id));
+    await db.delete(barbers).where(eq(barbers.id, id));
+    if (barber.isDemo) {
+      await db.delete(users).where(eq(users.id, barber.userId));
+    }
   }
 
   async getServices(barberId: string): Promise<Service[]> {

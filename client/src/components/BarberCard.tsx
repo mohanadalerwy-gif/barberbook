@@ -53,11 +53,11 @@ export default function BarberCard({ barber, onClick }: BarberCardProps) {
                 {barber.haircutPrice && (
                   <span className="flex items-center gap-1">
                     <Scissors className="h-3 w-3" />
-                    ${barber.haircutPrice}
+                    {barber.haircutPrice} {t('sar')}
                   </span>
                 )}
                 {barber.beardPrice && (
-                  <span>{t('beard')}: ${barber.beardPrice}</span>
+                  <span>{t('beard')}: {barber.beardPrice} {t('sar')}</span>
                 )}
               </div>
             ) : (
