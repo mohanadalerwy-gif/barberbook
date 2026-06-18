@@ -156,7 +156,7 @@ export default function HomeServiceBooking() {
     <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-8">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/book')}>
+          <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-xl font-bold">{t('homeServiceTitle')}</h1>

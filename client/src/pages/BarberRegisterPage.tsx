@@ -89,9 +89,7 @@ export default function BarberRegisterPage() {
           description: "Please sign in to register as a barber.",
           variant: "destructive",
         });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
+        navigate('/login');
         return;
       }
       toast({
@@ -145,9 +143,7 @@ export default function BarberRegisterPage() {
         description: "Please sign in to register as a barber.",
         variant: "destructive",
       });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
+      navigate('/login');
     }
   }, [isLoading, isAuthenticated, toast]);
 
@@ -191,7 +187,7 @@ export default function BarberRegisterPage() {
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => navigate('/profile')}
+            onClick={() => window.history.back()}
             data-testid="button-back"
           >
             <ArrowLeft className="h-5 w-5" />

@@ -39,7 +39,7 @@ import { useAuth } from "@/hooks/useAuth";
 function RoleRedirect() {
   const { user, isLoading } = useAuth();
 
-  if (isLoading) return null;
+  if (isLoading) return <HomePage />;
   if (!user) return <HomePage />;
 
   if (user.role === 'admin') return <Redirect to="/panel-d37eb5xcwv" />;

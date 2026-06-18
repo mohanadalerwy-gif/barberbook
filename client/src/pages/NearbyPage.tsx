@@ -57,7 +57,7 @@ export default function NearbyPage() {
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => navigate('/')}
+            onClick={() => window.history.back()}
             data-testid="button-back"
           >
             <ArrowLeft className="h-5 w-5" />

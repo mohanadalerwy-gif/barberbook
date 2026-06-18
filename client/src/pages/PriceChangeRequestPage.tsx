@@ -148,7 +148,7 @@ export default function PriceChangeRequestPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/barber-dashboard')}
+            onClick={() => window.history.back()}
             data-testid="button-back"
           >
             <ArrowLeft className="h-5 w-5" />

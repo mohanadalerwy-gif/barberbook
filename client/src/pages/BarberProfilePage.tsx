@@ -104,7 +104,7 @@ export default function BarberProfilePage() {
           description: "You need to sign in to book an appointment.",
           variant: "destructive",
         });
-        setTimeout(() => { window.location.href = "/api/login"; }, 500);
+        navigate('/login');
         return;
       }
       toast({
@@ -159,7 +159,7 @@ export default function BarberProfilePage() {
       <div className="min-h-screen bg-background/80 backdrop-blur-sm">
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/book')}>
+            <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <Skeleton className="h-7 w-32" />
@@ -199,7 +199,7 @@ export default function BarberProfilePage() {
         description: "Please sign in to book an appointment.",
         variant: "destructive",
       });
-      setTimeout(() => { window.location.href = "/api/login"; }, 500);
+      navigate('/login');
       return;
     }
 
@@ -297,7 +297,7 @@ export default function BarberProfilePage() {
             onClick={() => {
               if (step === 'time') setStep('service');
               else if (step === 'confirm') setStep('time');
-              else navigate('/book');
+              else window.history.back();
             }}
             data-testid="button-back"
           >

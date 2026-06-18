@@ -34,7 +34,7 @@ export default function BookByBarberPage() {
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => navigate('/book')}
+            onClick={() => window.history.back()}
             data-testid="button-back"
           >
             <ArrowLeft className="h-5 w-5" />
