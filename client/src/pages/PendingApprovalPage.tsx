@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
+import { toAbsoluteUrl } from '@/lib/queryClient';
 import { Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import logo from '../assets/logo.png';
@@ -11,7 +12,7 @@ export default function PendingApprovalPage() {
   const [, navigate] = useLocation();
 
   const handleLogout = async () => {
-    await fetch('/api/logout', { method: 'POST' });
+    await fetch(toAbsoluteUrl('/api/logout'), { method: 'POST' });
     queryClient.clear();
     navigate('/login');
   };

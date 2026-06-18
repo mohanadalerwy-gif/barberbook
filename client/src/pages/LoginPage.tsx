@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/lib/i18n';
+import { toAbsoluteUrl } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -36,7 +37,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const url = mode === 'login' ? '/api/login' : '/api/register';
+      const url = toAbsoluteUrl(mode === 'login' ? '/api/login' : '/api/register');
       const body: Record<string, string> = { email, password, lang: i18n.language };
       if (mode === 'register') {
         if (firstName) body.firstName = firstName;

@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Star, Scissors, Store } from 'lucide-react';
 import type { Barber } from '@/lib/types';
+import { toAbsoluteUrl } from '@/lib/queryClient';
 
 export default function BookByBarberPage() {
   const [, navigate] = useLocation();
@@ -20,7 +21,7 @@ export default function BookByBarberPage() {
   const { data: barbers = [], isLoading } = useQuery<Barber[]>({
     queryKey: ['/api/barbers'],
     queryFn: async () => {
-      const res = await fetch('/api/barbers');
+      const res = await fetch(toAbsoluteUrl('/api/barbers'));
       if (!res.ok) throw new Error('Failed to fetch barbers');
       return res.json();
     },

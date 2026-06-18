@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { toAbsoluteUrl } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -74,7 +75,7 @@ export default function VerifyEmailPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/verify-email', {
+      const res = await fetch(toAbsoluteUrl('/api/verify-email'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, code }),
@@ -97,7 +98,7 @@ export default function VerifyEmailPage() {
     setResending(true);
     setError('');
     try {
-      const res = await fetch('/api/resend-verification', {
+      const res = await fetch(toAbsoluteUrl('/api/resend-verification'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, lang: i18n.language }),

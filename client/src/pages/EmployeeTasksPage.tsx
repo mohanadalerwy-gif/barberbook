@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, ClipboardList, ShieldAlert } from 'lucide-react';
 import logo from '../assets/logo.png';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, toAbsoluteUrl } from '@/lib/queryClient';
 
 interface EmployeeTask {
   id: string;
@@ -42,7 +42,7 @@ export default function EmployeeTasksPage() {
 
   const { data: tasks = [], isLoading } = useQuery<EmployeeTask[]>({
     queryKey: ['/api/tasks'],
-    queryFn: () => fetch('/api/tasks').then(r => r.json()),
+    queryFn: () => fetch(toAbsoluteUrl('/api/tasks'), { credentials: 'include' }).then(r => r.json()),
     enabled: isEmployee,
   });
 
@@ -130,7 +130,7 @@ export default function EmployeeTasksPage() {
             variant="ghost"
             size="sm"
             onClick={async () => {
-              await fetch('/api/logout', { method: 'POST' });
+              await fetch(toAbsoluteUrl('/api/logout'), { method: 'POST' });
               queryClient.clear();
               navigate('/login');
             }}

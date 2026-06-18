@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import i18n from '@/lib/i18n';
 import { ArrowLeft, ShieldAlert, Calendar } from 'lucide-react';
+import { toAbsoluteUrl } from '@/lib/queryClient';
 
 interface LastBooking {
   serviceName: string;
@@ -51,7 +52,7 @@ export default function AdminUsersPage() {
 
   const { data: users = [], isLoading } = useQuery<AdminUserDetailed[]>({
     queryKey: ['/api/admin/users-detailed'],
-    queryFn: () => fetch('/api/admin/users-detailed').then(r => r.json()),
+    queryFn: () => fetch(toAbsoluteUrl('/api/admin/users-detailed'), { credentials: 'include' }).then(r => r.json()),
     enabled: isAdmin,
   });
 

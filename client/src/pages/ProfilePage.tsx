@@ -21,7 +21,7 @@ import {
   Navigation,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { clearCsrfToken } from '@/lib/queryClient';
+import { clearCsrfToken, toAbsoluteUrl } from '@/lib/queryClient';
 
 interface Booking {
   id: string;
@@ -73,7 +73,7 @@ export default function ProfilePage() {
   };
 
   const handleLogout = async () => {
-    await fetch('/api/logout', { method: 'POST' });
+    await fetch(toAbsoluteUrl('/api/logout'), { method: 'POST' });
     clearCsrfToken();
     await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
     navigate('/');

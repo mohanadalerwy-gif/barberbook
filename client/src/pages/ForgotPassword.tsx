@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/lib/i18n';
+import { toAbsoluteUrl } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -24,7 +25,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/forgot-password', {
+      const res = await fetch(toAbsoluteUrl('/api/forgot-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, lang: i18n.language }),

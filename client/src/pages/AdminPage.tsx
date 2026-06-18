@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import i18n from '@/lib/i18n';
+import { apiRequest, toAbsoluteUrl } from '@/lib/queryClient';
 import {
   Users, Scissors, MessageSquare, ShieldAlert,
   CheckCircle, Calendar, Clock,
@@ -154,24 +155,19 @@ export default function AdminPage() {
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<AdminTask[]>({
     queryKey: ['/api/admin/tasks'],
-    queryFn: () => fetch('/api/admin/tasks').then(r => r.json()),
+    queryFn: () => fetch(toAbsoluteUrl('/api/admin/tasks'), { credentials: 'include' }).then(r => r.json()),
     enabled: isAdmin,
   });
 
   const { data: employees = [] } = useQuery<Employee[]>({
     queryKey: ['/api/admin/employees'],
-    queryFn: () => fetch('/api/admin/employees').then(r => r.json()),
+    queryFn: () => fetch(toAbsoluteUrl('/api/admin/employees'), { credentials: 'include' }).then(r => r.json()),
     enabled: isAdmin,
   });
 
   const ticketMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const res = await fetch(`/api/admin/support-tickets/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? 'Failed');
+      const res = await apiRequest('PATCH', `/api/admin/support-tickets/${id}`, { status });
       return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/admin/support-tickets'] }),
@@ -179,12 +175,7 @@ export default function AdminPage() {
 
   const createTaskMutation = useMutation({
     mutationFn: async (data: { title: string; message: string; assignedTo: string }) => {
-      const res = await fetch('/api/admin/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? 'Failed');
+      const res = await apiRequest('POST', '/api/admin/tasks', data);
       return res.json();
     },
     onSuccess: () => {

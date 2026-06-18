@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import i18n from '@/lib/i18n';
 import { ArrowLeft, ShieldAlert, Star } from 'lucide-react';
+import { toAbsoluteUrl } from '@/lib/queryClient';
 
 interface AdminBooking {
   id: string;
@@ -70,7 +71,7 @@ export default function AdminBookingsPage() {
 
   const { data: bookings = [], isLoading } = useQuery<AdminBooking[]>({
     queryKey: ['/api/admin/bookings'],
-    queryFn: () => fetch('/api/admin/bookings').then(r => r.json()),
+    queryFn: () => fetch(toAbsoluteUrl('/api/admin/bookings'), { credentials: 'include' }).then(r => r.json()),
     enabled: isAdmin,
   });
 
