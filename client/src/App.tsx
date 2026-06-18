@@ -74,7 +74,7 @@ function AppShell() {
     location.startsWith('/barber/');
 
   return (
-    <div className="flex flex-col overflow-hidden" style={{ height: '100dvh' }}>
+    <div className="flex flex-col overflow-hidden safe-area-top" style={{ height: '100dvh' }}>
       <div
         className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain"
       >
