@@ -6,7 +6,7 @@ import { Capacitor } from "@capacitor/core";
 // every request at the real production origin instead.
 const API_BASE = Capacitor.isNativePlatform() ? "https://shvi.app" : "";
 
-function toAbsoluteUrl(url: string): string {
+export function toAbsoluteUrl(url: string): string {
   return url.startsWith("/") ? `${API_BASE}${url}` : url;
 }
 
