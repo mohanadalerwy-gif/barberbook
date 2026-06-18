@@ -59,7 +59,9 @@ export function getSession() {
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      // "none" lets the Capacitor native app (capacitor://localhost) send cookies
+      // cross-origin. Requires secure:true, so falls back to "lax" in development.
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: sessionTtl,
     },
   });

@@ -1,4 +1,14 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { Capacitor } from "@capacitor/core";
+
+// When running as a native iOS/Android app the frontend bundle loads from
+// capacitor://localhost, so relative /api/* paths resolve nowhere. Point
+// every request at the real production origin instead.
+const API_BASE = Capacitor.isNativePlatform() ? "https://shvi.app" : "";
+
+function toAbsoluteUrl(url: string): string {
+  return url.startsWith("/") ? `${API_BASE}${url}` : url;
+}
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -14,7 +24,7 @@ let csrfFetchPromise: Promise<string> | null = null;
 async function getCsrfToken(): Promise<string> {
   if (cachedCsrfToken) return cachedCsrfToken;
   if (!csrfFetchPromise) {
-    csrfFetchPromise = fetch("/api/csrf-token", { credentials: "include" })
+    csrfFetchPromise = fetch(toAbsoluteUrl("/api/csrf-token"), { credentials: "include" })
       .then((r) => r.json())
       .then((data: { token: string }) => {
         cachedCsrfToken = data.token;
@@ -46,7 +56,7 @@ export async function apiRequest(
     if (token) headers["X-CSRF-Token"] = token;
   }
 
-  const res = await fetch(url, {
+  const res = await fetch(toAbsoluteUrl(url), {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -63,7 +73,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const res = await fetch(toAbsoluteUrl(queryKey.join("/") as string), {
       credentials: "include",
     });
 

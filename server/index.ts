@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
@@ -11,6 +12,22 @@ const httpServer = createServer(app);
 // Trust Railway's (and other reverse proxies') forwarded headers so
 // req.secure is correct and secure session cookies are set properly.
 app.set("trust proxy", 1);
+
+// Allow Capacitor native app origins to call the API with cookies.
+const CAPACITOR_ORIGINS = ["capacitor://localhost", "https://localhost", "http://localhost"];
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Same-origin requests (no Origin header) and known Capacitor origins are allowed.
+      if (!origin || CAPACITOR_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
+    credentials: true,
+  }),
+);
 
 app.use(
   helmet({
