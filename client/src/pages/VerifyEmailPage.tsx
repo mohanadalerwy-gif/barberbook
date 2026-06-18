@@ -78,6 +78,7 @@ export default function VerifyEmailPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, code }),
+        credentials: 'include',
       });
       const data = await res.json();
       if (!res.ok) { setError(data.message === 'Code expired' ? t('otpExpired') : data.message === 'Invalid code' ? t('otpInvalid') : data.message); return; }

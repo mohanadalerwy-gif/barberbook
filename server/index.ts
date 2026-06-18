@@ -13,13 +13,19 @@ const httpServer = createServer(app);
 // req.secure is correct and secure session cookies are set properly.
 app.set("trust proxy", 1);
 
-// Allow Capacitor native app origins to call the API with cookies.
-const CAPACITOR_ORIGINS = ["capacitor://localhost", "https://localhost", "http://localhost"];
+// Allow the production website and Capacitor native app to call the API with cookies.
+const ALLOWED_ORIGINS = [
+  "https://shvi.app",
+  "https://www.shvi.app",
+  "capacitor://localhost",
+  "https://localhost",
+  "http://localhost",
+];
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Same-origin requests (no Origin header) and known Capacitor origins are allowed.
-      if (!origin || CAPACITOR_ORIGINS.includes(origin)) {
+      // Same-origin requests (no Origin header) and all known origins are allowed.
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
         callback(null, true);
       } else {
         callback(null, false);
