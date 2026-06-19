@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* SHVI gold accent */
+:root {
+  --gold: #b08442;
+  --gold-glow: rgba(176, 132, 66, 0.28);
+}
+.dark {
+  --gold: #c9995e;
+  --gold-glow: rgba(201, 153, 94, 0.22);
+}
+
 /* LIGHT MODE */
 :root {
   --button-outline: rgba(0,0,0, .10);
@@ -241,6 +251,16 @@
     @apply hidden;
   }
 
+  /* Staggered card entrance animation */
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-slide-up {
+    opacity: 0;
+    animation: fadeSlideUp 0.35s ease-out forwards;
+  }
+
   /* Placeholder styling for contentEditable div */
   [contenteditable][data-placeholder]:empty::before {
     content: attr(data-placeholder);
@@ -324,4 +344,46 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+}
+
+/* ── Hero section ─────────────────────────────── */
+.hero-section {
+  background:
+    radial-gradient(ellipse 110% 90% at 50% 0%, rgba(176,132,66,0.11) 0%, transparent 68%),
+    linear-gradient(180deg, #fdf3e0 0%, rgba(253,243,224,0) 100%);
+}
+.dark .hero-section {
+  background:
+    radial-gradient(ellipse 110% 90% at 50% 0%, rgba(201,153,94,0.22) 0%, transparent 68%),
+    linear-gradient(180deg, #1d1208 0%, rgba(14,9,3,0) 100%);
+}
+
+/* Logo glow — subtle warm shadow in light, gold aura in dark */
+.hero-logo {
+  filter: drop-shadow(0 3px 14px rgba(140,90,20,0.22));
+}
+.dark .hero-logo {
+  filter:
+    drop-shadow(0 0 32px rgba(201,153,94,0.50))
+    drop-shadow(0 4px 12px rgba(176,132,66,0.35));
+}
+
+/* Tagline colour adapts per mode */
+.hero-tagline {
+  color: var(--gold);
+  opacity: 0.80;
+}
+
+/* Book CTA — transparent gold pill, readable on both backgrounds */
+.hero-book-btn {
+  background: rgba(176,132,66,0.13);
+  border: 1.5px solid rgba(176,132,66,0.38);
+  color: #7a5414;
+  box-shadow: 0 2px 14px rgba(176,132,66,0.10);
+}
+.dark .hero-book-btn {
+  background: rgba(201,153,94,0.17);
+  border: 1.5px solid rgba(201,153,94,0.48);
+  color: #c9995e;
+  box-shadow: 0 2px 18px rgba(201,153,94,0.14);
 }

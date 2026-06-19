@@ -3,19 +3,18 @@ import { useLocation } from 'wouter';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import BarberCard from '@/components/BarberCard';
-import { MapPin, Calendar, Navigation, Scissors, Sparkles, CheckCircle, Star, Home } from 'lucide-react';
+import {
+  MapPin, Calendar, Navigation, CheckCircle, Star, Home, Bell, Menu,
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest } from '@/lib/queryClient';
 import { openMapsApp } from '@/lib/maps-utils';
 import type { Barber } from '@/lib/types';
-import lightBg from '@assets/light_background.png';
-import darkBg from '@assets/dark_background.png';
 import logo from '../assets/logo.png';
 
 interface Booking {
@@ -39,20 +38,6 @@ interface Booking {
   customerAddress?: string | null;
 }
 
-function DecorativeAccent() {
-  return (
-    <div className="flex justify-center py-2">
-      <div className="flex items-center gap-2 opacity-40">
-        <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50" />
-        <Sparkles className="h-4 w-4 text-primary" />
-        <Scissors className="h-5 w-5 text-primary rotate-45" />
-        <Sparkles className="h-4 w-4 text-primary" />
-        <div className="h-px w-8 bg-gradient-to-l from-transparent to-primary/50" />
-      </div>
-    </div>
-  );
-}
-
 function BookingCard({ booking }: { booking: Booking }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -72,29 +57,39 @@ function BookingCard({ booking }: { booking: Booking }) {
     if (!selected) return;
     setSubmitting(true);
     setSubmitError('');
-    console.log('[review] submitting', { bookingId: booking.id, rating: selected, review: comment });
     try {
       await apiRequest('POST', `/api/bookings/${booking.id}/review`, { rating: selected, review: comment });
-      console.log('[review] success');
       setSubmitted(true);
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
       }, 2500);
-    } catch (err) {
-      console.error('[review] error', err);
+    } catch {
       setSubmitError('Failed to submit review. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
+  const statusColors: Record<string, string> = {
+    confirmed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    accepted:  'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    completed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+    traveling: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+    arrived:   'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  };
+
   return (
-    <Card>
-      <CardContent className="p-4 space-y-3">
-        {/* Main booking info */}
+    <div
+      className="rounded-2xl bg-card overflow-hidden"
+      style={{
+        border: '1px solid rgba(176,132,66,0.15)',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+      }}
+    >
+      <div className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <p className="font-medium">{booking.serviceName}</p>
+            <p className="font-semibold">{booking.serviceName}</p>
             <p className="text-sm text-muted-foreground">{t('with')} {booking.barberName}</p>
             <p className="text-sm text-muted-foreground">
               {format(parseISO(booking.date), 'EEE, MMM d')} {t('at')} {booking.time}
@@ -112,7 +107,8 @@ function BookingCard({ booking }: { booking: Booking }) {
                 </p>
                 {booking.barberAddress && (
                   <button
-                    className="flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"
+                    className="flex items-center gap-1 text-xs mt-0.5"
+                    style={{ color: 'var(--gold)' }}
                     onClick={() => {
                       const lat = parseFloat(booking.barberLat ?? '');
                       const lng = parseFloat(booking.barberLng ?? '');
@@ -133,33 +129,23 @@ function BookingCard({ booking }: { booking: Booking }) {
           <div className="text-right shrink-0">
             <Badge
               variant="secondary"
-              className={
-                booking.status === 'confirmed' || booking.status === 'accepted'
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                  : booking.status === 'completed'
-                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                  : booking.status === 'traveling'
-                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                  : booking.status === 'arrived'
-                  ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
-                  : ''
-              }
+              className={statusColors[booking.status] ?? ''}
             >
-              {(booking.status === 'confirmed' || booking.status === 'accepted') && <CheckCircle className="h-3 w-3 mr-1" />}
+              {(booking.status === 'confirmed' || booking.status === 'accepted') && (
+                <CheckCircle className="h-3 w-3 mr-1" />
+              )}
               {t(booking.status)}
             </Badge>
-            <p className="text-sm font-medium mt-2">{booking.price} {t('sar')}</p>
+            <p className="text-sm font-semibold mt-2" style={{ color: 'var(--gold)' }}>
+              {booking.price} {t('sar')}
+            </p>
           </div>
         </div>
 
-        {/* Review form for completed, unreviewed bookings */}
         {showReviewForm && (
-          <div className="border-t pt-3 space-y-2">
+          <div className="border-t pt-3 space-y-2" style={{ borderColor: 'rgba(176,132,66,0.15)' }}>
             <p className="text-sm font-medium">{t('rateYourVisit', 'Rate your visit')}</p>
-            <div
-              className="flex gap-1"
-              onMouseLeave={() => setHovered(0)}
-            >
+            <div className="flex gap-1" onMouseLeave={() => setHovered(0)}>
               {[1, 2, 3, 4, 5].map(star => (
                 <button
                   key={star}
@@ -185,9 +171,7 @@ function BookingCard({ booking }: { booking: Booking }) {
               rows={2}
               className="text-sm resize-none"
             />
-            {submitError && (
-              <p className="text-sm text-destructive">{submitError}</p>
-            )}
+            {submitError && <p className="text-sm text-destructive">{submitError}</p>}
             <Button
               size="sm"
               onClick={handleSubmitReview}
@@ -199,15 +183,15 @@ function BookingCard({ booking }: { booking: Booking }) {
           </div>
         )}
 
-        {/* Thank-you message after review is saved */}
         {showSubmittedThanks && (
-          <div className="border-t pt-3 flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="border-t pt-3 flex items-center gap-2 text-sm text-muted-foreground"
+               style={{ borderColor: 'rgba(176,132,66,0.15)' }}>
             <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
             {t('reviewSubmitted', 'Thanks for your review!')}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -215,46 +199,39 @@ export default function HomePage() {
   const [, navigate] = useLocation();
   const { t, i18n } = useTranslation();
   const { user, isAuthenticated } = useAuth();
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
   }, [i18n.language]);
 
   useEffect(() => {
-    if (user?.role === 'employee') {
-      navigate('/employee');
-    }
+    if (user?.role === 'employee') navigate('/employee');
   }, [user?.role]);
 
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
-        },
-        () => {
-          setLocation({ lat: 25.2048, lng: 55.2708 });
-        }
+        pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        ()  => setUserLocation({ lat: 25.2048, lng: 55.2708 }),
       );
     } else {
-      setLocation({ lat: 25.2048, lng: 55.2708 });
+      setUserLocation({ lat: 25.2048, lng: 55.2708 });
     }
   }, []);
 
   const { data: nearbyBarbers = [], isLoading: barbersLoading } = useQuery<Barber[]>({
-    queryKey: ['/api/barbers/nearby', location?.lat, location?.lng],
+    queryKey: ['/api/barbers/nearby', userLocation?.lat, userLocation?.lng],
     queryFn: async () => {
-      if (!location) return [];
-      const res = await fetch(`/api/barbers/nearby?lat=${location.lat}&lng=${location.lng}&radius=5`);
+      if (!userLocation) return [];
+      const res = await fetch(`/api/barbers/nearby?lat=${userLocation.lat}&lng=${userLocation.lng}&radius=5`);
       if (!res.ok) throw new Error('Failed to fetch barbers');
       return res.json();
     },
-    enabled: !!location,
+    enabled: !!userLocation,
     refetchInterval: 30_000,
   });
 
-  // Show bookings for any authenticated non-barber (customers and admins)
   const isCustomer = isAuthenticated && user?.role !== 'barber';
 
   const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({
@@ -263,134 +240,182 @@ export default function HomePage() {
     refetchInterval: 30_000,
   });
 
-  // Show any active booking: pending/confirmed/accepted/traveling/arrived
-  // Also show completed bookings without a review so the customer can rate
   const upcomingBookings = bookings.filter(
-    b => b.status === 'pending' || b.status === 'confirmed' || b.status === 'accepted' ||
-         b.status === 'traveling' || b.status === 'arrived' ||
-         (b.status === 'completed' && !b.rating)
+    b =>
+      b.status === 'pending' || b.status === 'confirmed' || b.status === 'accepted' ||
+      b.status === 'traveling' || b.status === 'arrived' ||
+      (b.status === 'completed' && !b.rating),
   );
 
-  const isDarkMode = document.documentElement.classList.contains('dark');
+  const greeting = user?.firstName ? `مرحباً، ${user.firstName}` : 'مرحباً بك';
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url(${isDarkMode ? darkBg : lightBg})` }}
-    >
-      <div className="min-h-screen bg-background/70 backdrop-blur-[2px]">
-        <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
-          <div className="flex items-center justify-center">
-            <img src={logo} alt="SHVI" style={{ maxHeight: 80, width: 'auto', objectFit: 'contain', background: 'transparent', border: 'none', boxShadow: 'none' }} />
-          </div>
-        </header>
+    <div className="min-h-full">
+      {/* ── Hero ──────────────────────────────────── */}
+      <section className="hero-section safe-area-top relative">
+        {/* Icon row */}
+        <div className="flex items-center justify-between px-5 pt-4">
+          <button
+            className="p-2.5 rounded-xl transition-opacity active:opacity-60"
+            aria-label="Notifications"
+            style={{ background: 'rgba(176,132,66,0.10)' }}
+          >
+            <Bell className="h-5 w-5" style={{ color: 'var(--gold)' }} />
+          </button>
+          <button
+            className="p-2.5 rounded-xl transition-opacity active:opacity-60"
+            aria-label="Menu"
+            style={{ background: 'rgba(176,132,66,0.10)' }}
+          >
+            <Menu className="h-5 w-5" style={{ color: 'var(--gold)' }} />
+          </button>
+        </div>
 
-        <DecorativeAccent />
+        {/* Logo + tagline + CTA */}
+        <div className="flex flex-col items-center px-6 pt-5 pb-10">
+          <img
+            src={logo}
+            alt="SHVI"
+            className="hero-logo"
+            style={{ height: 115, width: 'auto', objectFit: 'contain' }}
+          />
+          <p className="mt-4 text-base font-semibold text-center text-foreground/90">
+            {greeting}
+          </p>
+          <p className="mt-1 text-xs font-medium text-center hero-tagline">
+            وقتك أغلى من الانتظار
+          </p>
+          <button
+            className="mt-6 hero-book-btn px-8 py-3 rounded-2xl flex items-center gap-2.5 transition-transform active:scale-95"
+            onClick={() => navigate('/book')}
+            data-testid="button-book-appointment"
+          >
+            <Calendar className="h-4 w-4" />
+            <span className="font-semibold text-sm">{t('bookAppointment')}</span>
+          </button>
+        </div>
+      </section>
 
-        <main className="px-4 py-6 space-y-6">
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              size="lg"
-              className="h-20 flex-col gap-2 shadow-md hover-elevate"
-              onClick={() => navigate('/book')}
-              data-testid="button-book-appointment"
-            >
-              <Calendar className="h-6 w-6" />
-              <span>{t('bookAppointment')}</span>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="h-20 flex-col gap-2 shadow-md hover-elevate"
-              onClick={() => navigate('/nearby')}
-              data-testid="button-nearby-barbers"
-            >
-              <Navigation className="h-6 w-6" />
-              <span>{t('nearbyBarbers')}</span>
-            </Button>
-          </div>
+      <main className="px-4 pt-4 pb-8 space-y-5">
+        {/* ── Secondary action — Nearby ────────────── */}
+        <button
+          className="w-full h-14 rounded-2xl flex items-center justify-center gap-2.5 transition-transform active:scale-95 bg-card"
+          style={{
+            border: '1.5px solid rgba(176,132,66,0.25)',
+            boxShadow: '0 2px 10px rgba(176,132,66,0.08)',
+          }}
+          onClick={() => navigate('/nearby')}
+          data-testid="button-nearby-barbers"
+        >
+          <Navigation className="h-5 w-5" style={{ color: 'var(--gold)' }} />
+          <span className="text-sm font-semibold" style={{ color: 'var(--gold)' }}>
+            {t('nearbyBarbers')}
+          </span>
+        </button>
 
-          {isCustomer && bookingsLoading && (
-            <section className="space-y-3">
-              <Skeleton className="h-7 w-52" />
-              {[1, 2].map(i => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-2 flex-1">
-                        <Skeleton className="h-4 w-36" />
-                        <Skeleton className="h-3 w-28" />
-                        <Skeleton className="h-3 w-32" />
-                        <Skeleton className="h-3 w-24" />
-                      </div>
-                      <div className="space-y-2 items-end flex flex-col">
-                        <Skeleton className="h-5 w-20 rounded-full" />
-                        <Skeleton className="h-4 w-12" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </section>
-          )}
-
-          {isCustomer && !bookingsLoading && upcomingBookings.length > 0 && (
-            <section className="space-y-3">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                {t('upcomingAppointments')}
-              </h2>
-              <div className="space-y-3">
-                {upcomingBookings.map(b => <BookingCard key={b.id} booking={b} />)}
-              </div>
-            </section>
-          )}
-
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">{t('barbersNearYou')}</h2>
-              <span className="text-sm text-muted-foreground px-3 py-1 rounded-full bg-gradient-to-r from-primary/5 to-transparent">
-                {t('within5km')}
-              </span>
-            </div>
-
-            {barbersLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <Skeleton className="h-16 w-16 rounded-full" />
-                        <div className="flex-1 space-y-2">
-                          <Skeleton className="h-5 w-32" />
-                          <Skeleton className="h-4 w-24" />
-                          <Skeleton className="h-4 w-20" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : nearbyBarbers.length > 0 ? (
-              <div className="space-y-3">
-                {nearbyBarbers.map((barber) => (
-                  <div key={barber.id} className="shadow-sm hover-elevate rounded-lg transition-all">
-                    <BarberCard barber={barber} onClick={() => navigate(`/barber/${barber.id}`)} />
+        {/* ── Upcoming bookings ───────────────────── */}
+        {isCustomer && bookingsLoading && (
+          <section className="space-y-3">
+            <Skeleton className="h-6 w-48 rounded-xl" />
+            {[1, 2].map(i => (
+              <div
+                key={i}
+                className="rounded-2xl bg-card p-4"
+                style={{ border: '1px solid rgba(176,132,66,0.12)' }}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-3 w-28" />
+                    <Skeleton className="h-3 w-24" />
                   </div>
-                ))}
+                  <div className="space-y-2 flex flex-col items-end">
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                </div>
               </div>
-            ) : (
-              <Card className="shadow-sm">
-                <CardContent className="py-8 text-center">
-                  <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">{t('noBarbersFound')}</p>
-                </CardContent>
-              </Card>
-            )}
+            ))}
           </section>
-        </main>
+        )}
 
-      </div>
+        {isCustomer && !bookingsLoading && upcomingBookings.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-base font-bold flex items-center gap-2">
+              <span
+                className="w-6 h-6 rounded-full inline-flex items-center justify-center shrink-0"
+                style={{ background: 'rgba(176,132,66,0.12)' }}
+              >
+                <Calendar className="h-3.5 w-3.5" style={{ color: 'var(--gold)' }} />
+              </span>
+              {t('upcomingAppointments')}
+            </h2>
+            <div className="space-y-3">
+              {upcomingBookings.map(b => <BookingCard key={b.id} booking={b} />)}
+            </div>
+          </section>
+        )}
+
+        {/* ── Nearby barbers ──────────────────────── */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold">{t('barbersNearYou')}</h2>
+            <span
+              className="text-xs px-3 py-1 rounded-full font-medium"
+              style={{ background: 'rgba(176,132,66,0.1)', color: 'var(--gold)' }}
+            >
+              {t('within5km')}
+            </span>
+          </div>
+
+          {barbersLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div
+                  key={i}
+                  className="rounded-2xl bg-card p-4 flex items-center gap-4"
+                  style={{ border: '1px solid rgba(176,132,66,0.12)' }}
+                >
+                  <Skeleton className="h-16 w-16 rounded-xl shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : nearbyBarbers.length > 0 ? (
+            <div className="space-y-3">
+              {nearbyBarbers.map((barber, idx) => (
+                <div
+                  key={barber.id}
+                  className="animate-fade-slide-up"
+                  style={{ animationDelay: `${idx * 65}ms` }}
+                >
+                  <BarberCard barber={barber} onClick={() => navigate(`/barber/${barber.id}`)} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              className="rounded-2xl py-10 text-center"
+              style={{
+                border: '1px solid rgba(176,132,66,0.15)',
+                background: 'rgba(176,132,66,0.03)',
+              }}
+            >
+              <div
+                className="h-14 w-14 rounded-full flex items-center justify-center mx-auto mb-3"
+                style={{ background: 'rgba(176,132,66,0.1)' }}
+              >
+                <MapPin className="h-7 w-7" style={{ color: 'var(--gold)' }} />
+              </div>
+              <p className="text-sm text-muted-foreground">{t('noBarbersFound')}</p>
+            </div>
+          )}
+        </section>
+      </main>
     </div>
   );
 }
