@@ -291,7 +291,7 @@ export default function HomePage() {
           {/* Two action buttons side by side */}
           <div className="mt-5 flex gap-3 w-full">
             <button
-              className="flex-1 btn-primary h-12 flex items-center justify-center gap-2"
+              className="flex-1 btn-secondary h-12 flex items-center justify-center gap-2"
               onClick={() => navigate('/book')}
               data-testid="button-book-appointment"
             >
