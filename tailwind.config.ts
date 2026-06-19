@@ -81,6 +81,17 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
+        ds: {
+          "bg-primary":   "var(--ds-bg-primary)",
+          "bg-secondary": "var(--ds-bg-secondary)",
+          "bg-tertiary":  "var(--ds-bg-tertiary)",
+          gold:           "var(--ds-gold-primary)",
+          "gold-hover":   "var(--ds-gold-hover)",
+          "gold-light":   "var(--ds-gold-light)",
+          success:        "var(--ds-success)",
+          warning:        "var(--ds-warning)",
+          error:          "var(--ds-error)",
+        },
       },
       fontFamily: {
         sans: ["var(--font-sans)"],

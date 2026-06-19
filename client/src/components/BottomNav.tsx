@@ -1,12 +1,11 @@
 import { useLocation, Link } from 'wouter';
-import { Home, Calendar, MapPin, User } from 'lucide-react';
+import { Home, Calendar, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
 const navItems = [
   { href: '/', icon: Home, key: 'home' },
   { href: '/book', icon: Calendar, key: 'book' },
-  { href: '/nearby', icon: MapPin, key: 'nearby' },
   { href: '/profile', icon: User, key: 'profile' },
 ] as const;
 

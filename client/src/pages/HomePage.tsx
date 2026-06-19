@@ -3,7 +3,6 @@ import { useLocation } from 'wouter';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -70,127 +69,130 @@ function BookingCard({ booking }: { booking: Booking }) {
     }
   };
 
-  const statusColors: Record<string, string> = {
-    confirmed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-    accepted:  'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-    completed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-    traveling: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-    arrived:   'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  const statusBadgeClass: Record<string, string> = {
+    confirmed: 'badge-ds badge-confirmed',
+    accepted:  'badge-ds badge-confirmed',
+    completed: 'badge-ds badge-completed',
+    traveling: 'badge-ds badge-traveling',
+    arrived:   'badge-ds badge-arrived',
+    pending:   'badge-ds badge-pending',
+    declined:  'badge-ds badge-declined',
+    cancelled: 'badge-ds badge-cancelled',
   };
 
   return (
-    <div
-      className="rounded-2xl bg-card overflow-hidden"
-      style={{
-        border: '1px solid rgba(176,132,66,0.15)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-      }}
-    >
-      <div className="p-4 space-y-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <p className="font-semibold">{booking.serviceName}</p>
-            <p className="text-sm text-muted-foreground">{t('with')} {booking.barberName}</p>
-            <p className="text-sm text-muted-foreground">
-              {format(parseISO(booking.date), 'EEE, MMM d')} {t('at')} {booking.time}
-            </p>
-            {isHomeService ? (
-              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                <Home className="h-3.5 w-3.5 shrink-0" />
-                {booking.customerAddress || t('homeService', 'Home Service')}
-              </p>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
-                  {booking.barberAddress || '—'}
-                </p>
-                {booking.barberAddress && (
-                  <button
-                    className="flex items-center gap-1 text-xs mt-0.5"
-                    style={{ color: 'var(--gold)' }}
-                    onClick={() => {
-                      const lat = parseFloat(booking.barberLat ?? '');
-                      const lng = parseFloat(booking.barberLng ?? '');
-                      if (!isNaN(lat) && !isNaN(lng)) {
-                        openMapsApp({ lat, lng, name: booking.barberName });
-                      } else {
-                        window.open(`https://www.google.com/maps/search/?q=${encodeURIComponent(booking.barberAddress)}`, '_blank');
-                      }
-                    }}
-                  >
-                    <Navigation className="h-3 w-3" />
-                    Open Location
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-          <div className="text-right shrink-0">
-            <Badge
-              variant="secondary"
-              className={statusColors[booking.status] ?? ''}
-            >
-              {(booking.status === 'confirmed' || booking.status === 'accepted') && (
-                <CheckCircle className="h-3 w-3 mr-1" />
-              )}
-              {t(booking.status)}
-            </Badge>
-            <p className="text-sm font-semibold mt-2" style={{ color: 'var(--gold)' }}>
-              {booking.price} {t('sar')}
-            </p>
-          </div>
-        </div>
-
-        {showReviewForm && (
-          <div className="border-t pt-3 space-y-2" style={{ borderColor: 'rgba(176,132,66,0.15)' }}>
-            <p className="text-sm font-medium">{t('rateYourVisit', 'Rate your visit')}</p>
-            <div className="flex gap-1" onMouseLeave={() => setHovered(0)}>
-              {[1, 2, 3, 4, 5].map(star => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setSelected(star)}
-                  onMouseEnter={() => setHovered(star)}
-                  className="p-0.5 transition-transform hover:scale-110"
-                >
-                  <Star
-                    className="h-6 w-6"
-                    fill={(hovered || selected) >= star ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    style={{ color: (hovered || selected) >= star ? '#f59e0b' : '#d1d5db' }}
-                  />
-                </button>
-              ))}
-            </div>
-            <Textarea
-              placeholder={t('leaveComment', 'Leave a comment (optional)')}
-              value={comment}
-              onChange={e => setComment(e.target.value)}
-              rows={2}
-              className="text-sm resize-none"
-            />
-            {submitError && <p className="text-sm text-destructive">{submitError}</p>}
-            <Button
-              size="sm"
-              onClick={handleSubmitReview}
-              disabled={!selected || submitting}
-              className="w-full"
-            >
-              {submitting ? t('loading', 'Submitting…') : t('submitReview', 'Submit review')}
-            </Button>
-          </div>
-        )}
-
-        {showSubmittedThanks && (
-          <div className="border-t pt-3 flex items-center gap-2 text-sm text-muted-foreground"
-               style={{ borderColor: 'rgba(176,132,66,0.15)' }}>
-            <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
-            {t('reviewSubmitted', 'Thanks for your review!')}
-          </div>
-        )}
+    <div className="appointment-card">
+      {/* Row 1: barber name + status badge */}
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <p className="font-bold text-sm leading-tight" style={{ color: 'var(--ds-text-primary)' }}>
+          {booking.barberName}
+        </p>
+        <span className={statusBadgeClass[booking.status] ?? 'badge-ds badge-pending'}>
+          {(booking.status === 'confirmed' || booking.status === 'accepted') && (
+            <CheckCircle className="h-3 w-3" />
+          )}
+          {t(booking.status)}
+        </span>
       </div>
+
+      {/* Service name */}
+      <p className="font-semibold mb-2.5">{booking.serviceName}</p>
+
+      {/* Date / time */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+        <Calendar className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--ds-gold-primary)' }} />
+        <span>{format(parseISO(booking.date), 'EEE, MMM d')} {t('at')} {booking.time}</span>
+      </div>
+
+      {/* Location + price row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          {isHomeService ? (
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Home className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--ds-gold-primary)' }} />
+              <span className="truncate">{booking.customerAddress || t('homeService', 'Home Service')}</span>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--ds-gold-primary)' }} />
+                <span className="truncate">{booking.barberAddress || '—'}</span>
+              </div>
+              {booking.barberAddress && (
+                <button
+                  className="flex items-center gap-1 text-xs mt-1 ms-5 transition-opacity active:opacity-60"
+                  style={{ color: 'var(--ds-gold-primary)' }}
+                  onClick={() => {
+                    const lat = parseFloat(booking.barberLat ?? '');
+                    const lng = parseFloat(booking.barberLng ?? '');
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                      openMapsApp({ lat, lng, name: booking.barberName });
+                    } else {
+                      window.open(`https://www.google.com/maps/search/?q=${encodeURIComponent(booking.barberAddress)}`, '_blank');
+                    }
+                  }}
+                >
+                  <Navigation className="h-3 w-3" />
+                  {t('openLocation', 'Open Location')}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+        <p className="text-base font-bold shrink-0" style={{ color: 'var(--ds-gold-primary)' }}>
+          {booking.price} <span className="text-sm font-medium">{t('sar')}</span>
+        </p>
+      </div>
+
+      {/* Review form */}
+      {showReviewForm && (
+        <div className="border-t mt-3 pt-3 space-y-2" style={{ borderColor: 'var(--ds-bg-tertiary)' }}>
+          <p className="text-sm font-medium">{t('rateYourVisit', 'Rate your visit')}</p>
+          <div className="flex gap-1" onMouseLeave={() => setHovered(0)}>
+            {[1, 2, 3, 4, 5].map(star => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setSelected(star)}
+                onMouseEnter={() => setHovered(star)}
+                className="p-0.5 transition-transform hover:scale-110"
+              >
+                <Star
+                  className="h-6 w-6"
+                  fill={(hovered || selected) >= star ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  style={{ color: (hovered || selected) >= star ? '#f59e0b' : '#d1d5db' }}
+                />
+              </button>
+            ))}
+          </div>
+          <Textarea
+            placeholder={t('leaveComment', 'Leave a comment (optional)')}
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            rows={2}
+            className="text-sm resize-none"
+          />
+          {submitError && <p className="text-sm text-destructive">{submitError}</p>}
+          <Button
+            size="sm"
+            onClick={handleSubmitReview}
+            disabled={!selected || submitting}
+            className="w-full"
+          >
+            {submitting ? t('loading', 'Submitting…') : t('submitReview', 'Submit review')}
+          </Button>
+        </div>
+      )}
+
+      {showSubmittedThanks && (
+        <div className="border-t mt-3 pt-3 flex items-center gap-2 text-sm text-muted-foreground"
+             style={{ borderColor: 'var(--ds-bg-tertiary)' }}>
+          <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+          {t('reviewSubmitted', 'Thanks for your review!')}
+        </div>
+      )}
     </div>
   );
 }
@@ -260,14 +262,14 @@ export default function HomePage() {
             aria-label="Notifications"
             style={{ background: 'rgba(176,132,66,0.10)' }}
           >
-            <Bell className="h-5 w-5" style={{ color: 'var(--gold)' }} />
+            <Bell className="h-5 w-5" style={{ color: 'var(--ds-gold-primary)' }} />
           </button>
           <button
             className="p-2.5 rounded-xl transition-opacity active:opacity-60"
             aria-label="Menu"
             style={{ background: 'rgba(176,132,66,0.10)' }}
           >
-            <Menu className="h-5 w-5" style={{ color: 'var(--gold)' }} />
+            <Menu className="h-5 w-5" style={{ color: 'var(--ds-gold-primary)' }} />
           </button>
         </div>
 
@@ -277,7 +279,7 @@ export default function HomePage() {
             src={logo}
             alt="SHVI"
             className="hero-logo"
-            style={{ height: 120, width: 'auto', objectFit: 'contain', opacity: 1 }}
+            style={{ height: 155, maxWidth: '65%', width: 'auto', objectFit: 'contain', opacity: 1 }}
           />
           <p className="mt-3 text-sm font-semibold text-center text-foreground/85">
             {greeting}
@@ -289,20 +291,20 @@ export default function HomePage() {
           {/* Two action buttons side by side */}
           <div className="mt-5 flex gap-3 w-full">
             <button
-              className="flex-1 hero-book-btn h-12 rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-95"
+              className="flex-1 btn-primary h-12 flex items-center justify-center gap-2"
               onClick={() => navigate('/book')}
               data-testid="button-book-appointment"
             >
               <Calendar className="h-4 w-4" />
-              <span className="font-semibold text-sm">{t('bookAppointment')}</span>
+              <span>{t('bookAppointment')}</span>
             </button>
             <button
-              className="flex-1 hero-nearby-btn h-12 rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-95"
+              className="flex-1 btn-secondary h-12 flex items-center justify-center gap-2"
               onClick={() => navigate('/nearby')}
               data-testid="button-nearby-barbers"
             >
               <Navigation className="h-4 w-4" />
-              <span className="font-semibold text-sm">{t('nearbyBarbers')}</span>
+              <span>{t('nearbyBarbers')}</span>
             </button>
           </div>
         </div>
@@ -335,6 +337,32 @@ export default function HomePage() {
           </section>
         )}
 
+        {isCustomer && !bookingsLoading && upcomingBookings.length === 0 && (
+          <section className="space-y-3">
+            <h2 className="text-base font-bold flex items-center gap-2">
+              <span
+                className="w-6 h-6 rounded-full inline-flex items-center justify-center shrink-0"
+                style={{ background: 'rgba(176,132,66,0.12)' }}
+              >
+                <Calendar className="h-3.5 w-3.5" style={{ color: 'var(--ds-gold-primary)' }} />
+              </span>
+              {t('upcomingAppointments')}
+            </h2>
+            <div
+              className="rounded-2xl py-8 text-center"
+              style={{ border: '1px solid rgba(176,132,66,0.15)', background: 'rgba(176,132,66,0.03)' }}
+            >
+              <div
+                className="h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-2.5"
+                style={{ background: 'rgba(176,132,66,0.10)' }}
+              >
+                <Calendar className="h-6 w-6" style={{ color: 'var(--ds-gold-primary)' }} />
+              </div>
+              <p className="text-sm text-muted-foreground">{t('noUpcomingAppointments')}</p>
+            </div>
+          </section>
+        )}
+
         {isCustomer && !bookingsLoading && upcomingBookings.length > 0 && (
           <section className="space-y-3">
             <h2 className="text-base font-bold flex items-center gap-2">
@@ -342,12 +370,16 @@ export default function HomePage() {
                 className="w-6 h-6 rounded-full inline-flex items-center justify-center shrink-0"
                 style={{ background: 'rgba(176,132,66,0.12)' }}
               >
-                <Calendar className="h-3.5 w-3.5" style={{ color: 'var(--gold)' }} />
+                <Calendar className="h-3.5 w-3.5" style={{ color: 'var(--ds-gold-primary)' }} />
               </span>
               {t('upcomingAppointments')}
             </h2>
             <div className="space-y-3">
-              {upcomingBookings.map(b => <BookingCard key={b.id} booking={b} />)}
+              {upcomingBookings.map((b, idx) => (
+                <div key={b.id} className="animate-fade-slide-up" style={{ animationDelay: `${idx * 80}ms` }}>
+                  <BookingCard booking={b} />
+                </div>
+              ))}
             </div>
           </section>
         )}
@@ -405,7 +437,7 @@ export default function HomePage() {
                 className="h-14 w-14 rounded-full flex items-center justify-center mx-auto mb-3"
                 style={{ background: 'rgba(176,132,66,0.1)' }}
               >
-                <MapPin className="h-7 w-7" style={{ color: 'var(--gold)' }} />
+                <MapPin className="h-7 w-7" style={{ color: 'var(--ds-gold-primary)' }} />
               </div>
               <p className="text-sm text-muted-foreground">{t('noBarbersFound')}</p>
             </div>
