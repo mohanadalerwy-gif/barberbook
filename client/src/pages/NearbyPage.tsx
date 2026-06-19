@@ -11,6 +11,7 @@ import type { Barber } from '@/lib/types';
 export default function NearbyPage() {
   const [, navigate] = useLocation();
   const { t, i18n } = useTranslation();
+  const [displayDistance, setDisplayDistance] = useState(5);
   const [maxDistance, setMaxDistance] = useState(5);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
@@ -93,8 +94,9 @@ export default function NearbyPage() {
             </span>
             <div className="flex-1">
               <Slider
-                value={[maxDistance]}
-                onValueChange={([value]) => setMaxDistance(value)}
+                value={[displayDistance]}
+                onValueChange={([value]) => setDisplayDistance(value)}
+                onValueCommit={([value]) => setMaxDistance(value)}
                 max={10}
                 min={1}
                 step={0.5}
@@ -105,7 +107,7 @@ export default function NearbyPage() {
               className="text-xs font-semibold shrink-0 tabular-nums"
               style={{ color: 'var(--ds-gold-primary)', minWidth: '3ch', textAlign: 'end' }}
             >
-              {maxDistance} {t('km')}
+              {displayDistance} {t('km')}
             </span>
           </div>
         </div>
