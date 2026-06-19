@@ -54,18 +54,11 @@ export default function NearbyPage() {
 
   return (
     <div className="min-h-full">
-      {/* ── Header ─────────────────────────────────── */}
-      <header
-        className="sticky top-0 z-40 safe-area-top"
-        style={{
-          background: 'var(--ds-bg-secondary)',
-          borderBottom: '1px solid var(--ds-bg-tertiary)',
-        }}
-      >
-        <div className="flex items-center px-4 py-3">
+      {/* ── Header — transparent so the background pattern shows through ── */}
+      <header className="sticky top-0 z-40 safe-area-top" style={{ background: 'transparent' }}>
+        <div className="flex items-center px-4 py-2.5">
           <button
-            className="p-2 rounded-xl transition-opacity active:opacity-60 shrink-0"
-            style={{ background: 'rgba(176,132,66,0.10)' }}
+            className="p-1.5 rounded-lg transition-opacity active:opacity-50 shrink-0"
             onClick={() => window.history.back()}
             aria-label="back"
             data-testid="button-back"
@@ -73,38 +66,48 @@ export default function NearbyPage() {
             <BackIcon className="h-5 w-5" style={{ color: 'var(--ds-gold-primary)' }} />
           </button>
           <h1
-            className="flex-1 text-center text-base font-bold"
+            className="flex-1 text-center text-sm font-bold"
             style={{ color: 'var(--ds-text-primary)' }}
           >
             {t('nearbyBarbers')}
           </h1>
-          {/* Spacer keeps the title visually centered */}
-          <div className="w-9 h-9 shrink-0" />
+          {/* Balancing spacer to keep title centred */}
+          <div className="w-8 h-8 shrink-0" />
         </div>
+        {/* Hair-thin gold separator */}
+        <div style={{ height: 1, background: 'rgba(176,132,66,0.15)', marginInline: 16 }} />
       </header>
 
-      <main className="px-4 pt-5 pb-8 space-y-5">
-        {/* ── Distance slider ─────────────────────── */}
-        <div className="ds-card">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
+      <main className="px-4 pt-4 pb-8 space-y-4">
+        {/* ── Distance slider — compact inline row ────── */}
+        <div
+          className="rounded-xl px-4 py-3"
+          style={{
+            background: 'rgba(176,132,66,0.07)',
+            border: '1px solid rgba(176,132,66,0.14)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold shrink-0" style={{ color: 'var(--ds-text-secondary)' }}>
               {t('distance')}
             </span>
+            <div className="flex-1">
+              <Slider
+                value={[maxDistance]}
+                onValueChange={([value]) => setMaxDistance(value)}
+                max={10}
+                min={1}
+                step={0.5}
+                data-testid="slider-distance"
+              />
+            </div>
             <span
-              className="text-xs font-medium px-2.5 py-0.5 rounded-full"
-              style={{ background: 'rgba(176,132,66,0.12)', color: 'var(--ds-gold-primary)' }}
+              className="text-xs font-semibold shrink-0 tabular-nums"
+              style={{ color: 'var(--ds-gold-primary)', minWidth: '3ch', textAlign: 'end' }}
             >
               {maxDistance} {t('km')}
             </span>
           </div>
-          <Slider
-            value={[maxDistance]}
-            onValueChange={([value]) => setMaxDistance(value)}
-            max={10}
-            min={1}
-            step={0.5}
-            data-testid="slider-distance"
-          />
         </div>
 
         {/* ── Result count ────────────────────────── */}
