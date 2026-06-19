@@ -279,7 +279,7 @@ export default function HomePage() {
             src={logo}
             alt="SHVI"
             className="hero-logo"
-            style={{ height: 155, maxWidth: '65%', width: 'auto', objectFit: 'contain', opacity: 1 }}
+            style={{ height: 220, maxWidth: '80%', width: 'auto', objectFit: 'contain', opacity: 1 }}
           />
           <p className="mt-3 text-sm font-semibold text-center text-foreground/85">
             {greeting}

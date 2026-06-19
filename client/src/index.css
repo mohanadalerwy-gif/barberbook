@@ -183,46 +183,34 @@
   html, #root {
     height: 100dvh;
     overflow: hidden;
-    background-color: #fdf3e0; /* hero light top color — fills behind status bar */
   }
 
-  html.dark, html.dark #root {
-    background-color: #1d1208; /* hero dark top color */
-  }
-
-  @media (prefers-color-scheme: dark) {
-    html:not(.light-mode), html:not(.light-mode) #root {
-      background-color: #1d1208;
-    }
-  }
-
-  body {
-    @apply font-sans antialiased bg-background text-foreground;
-    height: 100dvh;
-    overflow: hidden;
-    background-image: linear-gradient(rgba(255, 255, 255, 0.50), rgba(255, 255, 255, 0.50)), url('@assets/light_background.png');
+  /* Background pattern lives on html so it extends behind the status bar */
+  html {
+    background-color: #fdf3e0;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.18)), url('@assets/light_background.png');
     background-size: cover;
-    background-attachment: scroll;
     background-position: center;
     background-repeat: no-repeat;
   }
 
-  /* Dark mode via prefers-color-scheme (automatic) */
+  html.dark {
+    background-color: #1d1208;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.30), rgba(0, 0, 0, 0.30)), url('@assets/dark_background.png');
+  }
+
   @media (prefers-color-scheme: dark) {
-    body:not(.light-mode) {
-      background-image: linear-gradient(rgba(0, 0, 0, 0.50), rgba(0, 0, 0, 0.50)), url('@assets/dark_background.png');
+    html:not(.light-mode) {
+      background-color: #1d1208;
+      background-image: linear-gradient(rgba(0, 0, 0, 0.30), rgba(0, 0, 0, 0.30)), url('@assets/dark_background.png');
     }
   }
 
-  /* Dark mode via .dark class (manual toggle) */
-  .dark body,
-  body.dark {
-    background-image: linear-gradient(rgba(0, 0, 0, 0.50), rgba(0, 0, 0, 0.50)), url('@assets/dark_background.png');
-  }
-
-  /* Ensure light mode when .dark class is removed */
-  :root:not(.dark) body {
-    background-image: linear-gradient(rgba(255, 255, 255, 0.50), rgba(255, 255, 255, 0.50)), url('@assets/light_background.png');
+  body {
+    @apply font-sans antialiased text-foreground;
+    height: 100dvh;
+    overflow: hidden;
+    background: transparent;
   }
 }
 
@@ -367,13 +355,11 @@
 /* ── Hero section ─────────────────────────────── */
 .hero-section {
   background:
-    radial-gradient(ellipse 110% 90% at 50% 0%, rgba(176,132,66,0.11) 0%, transparent 68%),
-    linear-gradient(180deg, #fdf3e0 0%, rgba(253,243,224,0) 100%);
+    radial-gradient(ellipse 110% 90% at 50% 0%, rgba(176,132,66,0.11) 0%, transparent 68%);
 }
 .dark .hero-section {
   background:
-    radial-gradient(ellipse 110% 90% at 50% 0%, rgba(201,153,94,0.22) 0%, transparent 68%),
-    linear-gradient(180deg, #1d1208 0%, rgba(14,9,3,0) 100%);
+    radial-gradient(ellipse 110% 90% at 50% 0%, rgba(201,153,94,0.22) 0%, transparent 68%);
 }
 
 /* Logo glow — subtle warm shadow in light, gold aura in dark */
