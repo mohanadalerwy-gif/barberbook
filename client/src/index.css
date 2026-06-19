@@ -531,4 +531,15 @@
   .dark .badge-arrived   { background: rgba(139,92,246,.18); color: #a78bfa; border-color: rgba(139,92,246,.35); }
   .dark .badge-completed { background: rgba(201,153,94,.15); color: #C99B5A; border-color: rgba(201,153,94,.30); }
   .dark .badge-cancelled, .dark .badge-declined { background: rgba(229,57,53,.18); color: #f87171; border-color: rgba(229,57,53,.30); }
+
+  .badge-home-service {
+    background: rgba(76,175,80,0.11);
+    color: #2e7d32;
+    border: 1px solid rgba(76,175,80,0.25);
+  }
+  .dark .badge-home-service {
+    background: rgba(76,175,80,0.18);
+    color: #4ade80;
+    border-color: rgba(76,175,80,0.35);
+  }
 }

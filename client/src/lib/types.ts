@@ -26,6 +26,8 @@ export interface Barber {
   phone?: string;
   haircutPrice?: number;
   beardPrice?: number;
+  homeServiceEnabled?: boolean;
+  homeServicePrice?: number | null;
 }
 
 export interface Service {

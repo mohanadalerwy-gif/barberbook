@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Star, MapPin, Store, Scissors, ChevronLeft } from 'lucide-react';
+import { Star, MapPin, Store, Scissors, ChevronLeft, Home } from 'lucide-react';
 import type { Barber } from '@/lib/types';
 
 interface BarberCardProps {
@@ -91,6 +91,12 @@ export default function BarberCard({ barber, onClick }: BarberCardProps) {
               {!barber.haircutPrice && !barber.beardPrice && barber.priceRange && (
                 <span className="text-xs font-medium" style={{ color: 'var(--gold)' }}>
                   {barber.priceRange}
+                </span>
+              )}
+              {barber.homeServiceEnabled && (
+                <span className="badge-home-service inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-medium">
+                  <Home className="h-2.5 w-2.5" />
+                  {t('homeService', 'خدمة منزلية')}
                 </span>
               )}
             </div>
