@@ -271,48 +271,44 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* Logo + tagline + CTA */}
-        <div className="flex flex-col items-center px-6 pt-5 pb-10">
+        {/* Logo + tagline + CTA buttons */}
+        <div className="flex flex-col items-center px-5 pt-4 pb-7">
           <img
             src={logo}
             alt="SHVI"
             className="hero-logo"
-            style={{ height: 115, width: 'auto', objectFit: 'contain' }}
+            style={{ height: 120, width: 'auto', objectFit: 'contain', opacity: 1 }}
           />
-          <p className="mt-4 text-base font-semibold text-center text-foreground/90">
+          <p className="mt-3 text-sm font-semibold text-center text-foreground/85">
             {greeting}
           </p>
           <p className="mt-1 text-xs font-medium text-center hero-tagline">
             وقتك أغلى من الانتظار
           </p>
-          <button
-            className="mt-6 hero-book-btn px-8 py-3 rounded-2xl flex items-center gap-2.5 transition-transform active:scale-95"
-            onClick={() => navigate('/book')}
-            data-testid="button-book-appointment"
-          >
-            <Calendar className="h-4 w-4" />
-            <span className="font-semibold text-sm">{t('bookAppointment')}</span>
-          </button>
+
+          {/* Two action buttons side by side */}
+          <div className="mt-5 flex gap-3 w-full">
+            <button
+              className="flex-1 hero-book-btn h-12 rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-95"
+              onClick={() => navigate('/book')}
+              data-testid="button-book-appointment"
+            >
+              <Calendar className="h-4 w-4" />
+              <span className="font-semibold text-sm">{t('bookAppointment')}</span>
+            </button>
+            <button
+              className="flex-1 hero-nearby-btn h-12 rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-95"
+              onClick={() => navigate('/nearby')}
+              data-testid="button-nearby-barbers"
+            >
+              <Navigation className="h-4 w-4" />
+              <span className="font-semibold text-sm">{t('nearbyBarbers')}</span>
+            </button>
+          </div>
         </div>
       </section>
 
       <main className="px-4 pt-4 pb-8 space-y-5">
-        {/* ── Secondary action — Nearby ────────────── */}
-        <button
-          className="w-full h-14 rounded-2xl flex items-center justify-center gap-2.5 transition-transform active:scale-95 bg-card"
-          style={{
-            border: '1.5px solid rgba(176,132,66,0.25)',
-            boxShadow: '0 2px 10px rgba(176,132,66,0.08)',
-          }}
-          onClick={() => navigate('/nearby')}
-          data-testid="button-nearby-barbers"
-        >
-          <Navigation className="h-5 w-5" style={{ color: 'var(--gold)' }} />
-          <span className="text-sm font-semibold" style={{ color: 'var(--gold)' }}>
-            {t('nearbyBarbers')}
-          </span>
-        </button>
-
         {/* ── Upcoming bookings ───────────────────── */}
         {isCustomer && bookingsLoading && (
           <section className="space-y-3">

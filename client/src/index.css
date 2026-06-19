@@ -387,3 +387,15 @@
   color: #c9995e;
   box-shadow: 0 2px 18px rgba(201,153,94,0.14);
 }
+
+/* Nearby barbers CTA — outlined style */
+.hero-nearby-btn {
+  background: transparent;
+  border: 1.5px solid rgba(176,132,66,0.35);
+  color: #7a5414;
+}
+.dark .hero-nearby-btn {
+  background: transparent;
+  border: 1.5px solid rgba(201,153,94,0.40);
+  color: #c9995e;
+}
