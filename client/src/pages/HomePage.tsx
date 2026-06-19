@@ -254,7 +254,7 @@ export default function HomePage() {
   return (
     <div className="min-h-full">
       {/* ── Hero ──────────────────────────────────── */}
-      <section className="hero-section safe-area-top relative">
+      <section className="hero-section hero-extend-top relative">
         {/* Icon row */}
         <div className="flex items-center justify-between px-5 pt-4">
           <button

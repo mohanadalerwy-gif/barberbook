@@ -11,6 +11,10 @@ const config: CapacitorConfig = {
     CapacitorHttp: {
       enabled: true,
     },
+    StatusBar: {
+      overlaysWebView: true,
+      style: 'DARK', // dark icons for light hero (overridden at runtime)
+    },
   },
 };
 

@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { Capacitor } from "@capacitor/core";
+import { StatusBar, Style } from "@capacitor/status-bar";
 import App from "./App";
 import "./index.css";
 
@@ -17,6 +18,26 @@ if (Capacitor.isNativePlatform()) {
     }
     return nativeFetch(input, init);
   };
+
+  // Overlay the status bar so the webview fills edge-to-edge
+  StatusBar.setOverlaysWebView({ overlay: true });
+
+  const applyStatusBarStyle = () => {
+    const isDark =
+      document.documentElement.classList.contains('dark') ||
+      (!localStorage.getItem('theme') &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches);
+    // Dark hero → light (white) icons; Light hero → dark icons
+    StatusBar.setStyle({ style: isDark ? Style.Light : Style.Dark });
+  };
+
+  applyStatusBarStyle();
+
+  // Re-apply whenever the theme class on <html> changes
+  new MutationObserver(applyStatusBarStyle).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+  });
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

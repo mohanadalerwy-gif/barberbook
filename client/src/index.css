@@ -53,7 +53,7 @@
   --chart-3: 285 55% 45%;
   --chart-4: 35 75% 48%;
   --chart-5: 15 70% 52%;
-  --font-sans: Inter, sans-serif;
+  --font-sans: 'Tajawal', Inter, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
   --radius: .5rem;
@@ -183,6 +183,17 @@
   html, #root {
     height: 100dvh;
     overflow: hidden;
+    background-color: #fdf3e0; /* hero light top color — fills behind status bar */
+  }
+
+  html.dark, html.dark #root {
+    background-color: #1d1208; /* hero dark top color */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    html:not(.light-mode), html:not(.light-mode) #root {
+      background-color: #1d1208;
+    }
   }
 
   body {
@@ -244,6 +255,13 @@
 
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Pulls a section UP to cover the safe-area gap while keeping its content below the status bar.
+     Use on hero sections that should bleed behind the status bar. */
+  .hero-extend-top {
+    margin-top: calc(-1 * env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
   }
 
   /* Hide ugly search cancel button in Chrome until we can style it properly */
@@ -444,7 +462,7 @@
 @layer components {
   /* ── Buttons ─────────────────────────────── */
   .btn-primary {
-    background: linear-gradient(135deg, #B08442, #9A7138);
+    background: linear-gradient(135deg, rgba(176,132,66,0.70), rgba(154,113,56,0.70));
     color: #fff;
     border-radius: var(--ds-radius-lg);
     box-shadow: var(--ds-shadow-md);
@@ -452,6 +470,9 @@
     font-size: 1rem;
     border: none;
     transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  }
+  .dark .btn-primary {
+    background: linear-gradient(135deg, rgba(201,153,94,0.70), rgba(176,132,66,0.70));
   }
   .btn-primary:active { transform: scale(0.98); box-shadow: var(--ds-shadow-sm); }
   .btn-primary:hover  { opacity: 0.92; }
