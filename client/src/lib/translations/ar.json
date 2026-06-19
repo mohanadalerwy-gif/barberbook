@@ -5,7 +5,7 @@
   "nearbyBarbers": "الحلاقون القريبون",
   "barbersNearYou": "الحلاقون بالقرب منك",
   "within5km": "خلال 5 كم",
-  "noBarbersFound": "لم يتم العثور على حلاقين خلال 5 كم",
+  "noBarbersFound": "لم يتم العثور على حلاقين خلال {{distance}} كم",
   "noBarbers": "لا يوجد حلاقون متاحون حالياً",
   "directions": "الاتجاهات",
   "openLocation": "افتح الموقع",

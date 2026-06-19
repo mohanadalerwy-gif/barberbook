@@ -5,7 +5,7 @@
   "nearbyBarbers": "Nearby Barbers",
   "barbersNearYou": "Barbers Near You",
   "within5km": "Within 5 km",
-  "noBarbersFound": "No barbers found within 5 km",
+  "noBarbersFound": "No barbers found within {{distance}} km",
   "noBarbers": "No barbers available at the moment",
   "directions": "Directions",
   "openLocation": "Open Location",

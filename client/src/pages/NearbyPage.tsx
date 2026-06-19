@@ -99,7 +99,7 @@ export default function NearbyPage() {
                 onValueCommit={([value]) => setMaxDistance(value)}
                 max={10}
                 min={1}
-                step={0.5}
+                step={0.01}
                 data-testid="slider-distance"
               />
             </div>
@@ -107,7 +107,7 @@ export default function NearbyPage() {
               className="text-xs font-semibold shrink-0 tabular-nums"
               style={{ color: 'var(--ds-gold-primary)', minWidth: '3ch', textAlign: 'end' }}
             >
-              {displayDistance} {t('km')}
+              {(+displayDistance.toFixed(1))} {t('km')}
             </span>
           </div>
         </div>
@@ -173,7 +173,7 @@ export default function NearbyPage() {
               <MapPin className="h-7 w-7" style={{ color: 'var(--ds-gold-primary)' }} />
             </div>
             <p className="text-sm" style={{ color: 'var(--ds-text-tertiary)' }}>
-              {t('noBarbersFound')}
+              {t('noBarbersFound', { distance: +displayDistance.toFixed(1) })}
             </p>
           </div>
         )}
