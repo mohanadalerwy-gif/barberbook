@@ -304,7 +304,7 @@ export default function HomePage() {
               data-testid="button-nearby-barbers"
             >
               <Navigation className="h-4 w-4" />
-              <span>{t('nearbyBarbers')}</span>
+              <span>اقرب حلاق</span>
             </button>
           </div>
         </div>
