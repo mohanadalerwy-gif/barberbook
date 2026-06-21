@@ -6,14 +6,14 @@ import { format, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import BarberCard from '@/components/BarberCard';
+import PromoCarousel from '@/components/PromoCarousel';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import {
-  MapPin, Calendar, Navigation, CheckCircle, Star, Home, Bell, Menu,
+  Calendar, Navigation, CheckCircle, Star, Home, Bell, Menu, MapPin,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest } from '@/lib/queryClient';
 import { openMapsApp } from '@/lib/maps-utils';
-import type { Barber } from '@/lib/types';
 import logo from '../assets/logo.png';
 
 interface Booking {
@@ -201,8 +201,6 @@ export default function HomePage() {
   const [, navigate] = useLocation();
   const { t, i18n } = useTranslation();
   const { user, isAuthenticated } = useAuth();
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-
   useEffect(() => {
     document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
   }, [i18n.language]);
@@ -210,29 +208,6 @@ export default function HomePage() {
   useEffect(() => {
     if (user?.role === 'employee') navigate('/employee');
   }, [user?.role]);
-
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        ()  => setUserLocation({ lat: 25.2048, lng: 55.2708 }),
-      );
-    } else {
-      setUserLocation({ lat: 25.2048, lng: 55.2708 });
-    }
-  }, []);
-
-  const { data: nearbyBarbers = [], isLoading: barbersLoading } = useQuery<Barber[]>({
-    queryKey: ['/api/barbers/nearby', userLocation?.lat, userLocation?.lng],
-    queryFn: async () => {
-      if (!userLocation) return [];
-      const res = await fetch(`/api/barbers/nearby?lat=${userLocation.lat}&lng=${userLocation.lng}&radius=5`);
-      if (!res.ok) throw new Error('Failed to fetch barbers');
-      return res.json();
-    },
-    enabled: !!userLocation,
-    refetchInterval: 30_000,
-  });
 
   const isCustomer = isAuthenticated && user?.role !== 'barber';
 
@@ -384,65 +359,10 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ── Nearby barbers ──────────────────────── */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold">{t('barbersNearYou')}</h2>
-            <span
-              className="text-xs px-3 py-1 rounded-full font-medium"
-              style={{ background: 'rgba(176,132,66,0.1)', color: 'var(--gold)' }}
-            >
-              {t('within5km')}
-            </span>
-          </div>
-
-          {barbersLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <div
-                  key={i}
-                  className="rounded-2xl bg-card p-4 flex items-center gap-4"
-                  style={{ border: '1px solid rgba(176,132,66,0.12)' }}
-                >
-                  <Skeleton className="h-16 w-16 rounded-xl shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-24" />
-                    <Skeleton className="h-5 w-20 rounded-full" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : nearbyBarbers.length > 0 ? (
-            <div className="space-y-3">
-              {nearbyBarbers.map((barber, idx) => (
-                <div
-                  key={barber.id}
-                  className="animate-fade-slide-up"
-                  style={{ animationDelay: `${idx * 65}ms` }}
-                >
-                  <BarberCard barber={barber} onClick={() => navigate(`/barber/${barber.id}`)} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div
-              className="rounded-2xl py-10 text-center"
-              style={{
-                border: '1px solid rgba(176,132,66,0.15)',
-                background: 'rgba(176,132,66,0.03)',
-              }}
-            >
-              <div
-                className="h-14 w-14 rounded-full flex items-center justify-center mx-auto mb-3"
-                style={{ background: 'rgba(176,132,66,0.1)' }}
-              >
-                <MapPin className="h-7 w-7" style={{ color: 'var(--ds-gold-primary)' }} />
-              </div>
-              <p className="text-sm text-muted-foreground">{t('noBarbersFound')}</p>
-            </div>
-          )}
-        </section>
+        {/* ── Promo carousel ──────────────────────── */}
+        <ErrorBoundary>
+          <PromoCarousel />
+        </ErrorBoundary>
       </main>
     </div>
   );
