@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 const navItems = [
   { href: '/', icon: Home, key: 'home' },
-  { href: '/book', icon: Calendar, key: 'book' },
+  { href: '/my-appointments', icon: Calendar, key: 'myAppointments' },
   { href: '/profile', icon: User, key: 'profile' },
 ] as const;
 

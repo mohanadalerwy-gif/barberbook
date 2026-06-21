@@ -34,6 +34,7 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import AboutPage from "@/pages/AboutPage";
 import PendingApprovalPage from "@/pages/PendingApprovalPage";
+import MyAppointmentsPage from "@/pages/MyAppointmentsPage";
 import { useAuth } from "@/hooks/useAuth";
 
 function RoleRedirect() {
@@ -67,6 +68,7 @@ function AppShell() {
     location === '/book' ||
     location === '/book-by-barber' ||
     location === '/nearby' ||
+    location === '/my-appointments' ||
     location === '/profile' ||
     location === '/settings' ||
     location === '/barber-register' ||
@@ -106,6 +108,7 @@ function AppShell() {
           <Route path="/panel-d37eb5xcwv/bookings" component={AdminBookingsPage} />
           <Route path="/my-tasks" component={EmployeeTasksPage} />
           <Route path="/employee" component={EmployeeTasksPage} />
+          <Route path="/my-appointments" component={MyAppointmentsPage} />
           <Route path="/home-service" component={HomeServiceBooking} />
           <Route path="/privacy-policy" component={PrivacyPolicy} />
           <Route path="/privacy" component={PrivacyPolicy} />
