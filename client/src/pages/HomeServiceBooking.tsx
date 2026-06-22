@@ -3,9 +3,7 @@ import { useLocation } from 'wouter';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import {
   ArrowLeft,
   MapPin,
@@ -121,18 +119,26 @@ export default function HomeServiceBooking() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background/80 backdrop-blur-sm flex flex-col">
-        <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
+      <div className="min-h-screen flex flex-col">
+        <header
+          className="sticky top-0 z-40 backdrop-blur-md px-4 py-4 bg-[#FAF8F5]/90 dark:bg-[#121212]/90"
+          style={{ borderBottom: '1px solid rgba(176,132,66,0.15)' }}
+        >
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate('/profile')}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-xl font-bold">{t('homeService')}</h1>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--ds-gold-primary)' }}>
+              {t('homeService')}
+            </h1>
           </div>
         </header>
         <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 text-center gap-6">
-          <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-            <Check className="h-10 w-10 text-primary" />
+          <div
+            className="h-20 w-20 rounded-full flex items-center justify-center mx-auto"
+            style={{ background: 'rgba(176,132,66,0.12)' }}
+          >
+            <Check className="h-10 w-10" style={{ color: 'var(--ds-gold-primary)' }} />
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-bold">{t('requestSent')}</h2>
@@ -144,22 +150,30 @@ export default function HomeServiceBooking() {
             <Clock className="h-4 w-4 mr-2" />
             {t('waitingForBarber')}
           </Badge>
-          <Button className="w-full max-w-xs" onClick={() => navigate('/profile')}>
+          <button
+            className="btn-primary w-full max-w-xs h-12 text-base"
+            onClick={() => navigate('/profile')}
+          >
             {t('viewMyBookings')}
-          </Button>
+          </button>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background/80 backdrop-blur-sm pb-8">
-      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
+    <div className="min-h-screen pb-8">
+      <header
+        className="sticky top-0 z-40 backdrop-blur-md px-4 py-4 bg-[#FAF8F5]/90 dark:bg-[#121212]/90"
+        style={{ borderBottom: '1px solid rgba(176,132,66,0.15)' }}
+      >
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">{t('homeServiceTitle')}</h1>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--ds-gold-primary)' }}>
+            {t('homeServiceTitle')}
+          </h1>
         </div>
       </header>
 
@@ -169,32 +183,42 @@ export default function HomeServiceBooking() {
         {/* Service Type */}
         <section>
           <h2 className="font-semibold mb-3 flex items-center gap-2">
-            <Scissors className="h-4 w-4 text-primary" />
+            <Scissors className="h-4 w-4" style={{ color: 'var(--ds-gold-primary)' }} />
             {t('selectServiceType')}
           </h2>
           <div className="grid grid-cols-3 gap-2">
-            {SERVICE_TYPES.map(({ key, labelKey, icon }) => (
-              <button
-                key={key}
-                onClick={() => setServiceType(key)}
-                className={cn(
-                  'border rounded-xl p-3 text-center transition-all',
-                  serviceType === key
-                    ? 'border-primary bg-primary/10 text-primary font-semibold'
-                    : 'border-border hover:border-primary/50'
-                )}
-              >
-                <div className="text-2xl mb-1">{icon}</div>
-                <div className="text-xs">{t(labelKey)}</div>
-              </button>
-            ))}
+            {SERVICE_TYPES.map(({ key, labelKey, icon }) => {
+              const isSelected = serviceType === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setServiceType(key)}
+                  className={cn(
+                    'rounded-xl p-3 text-center transition-all',
+                    isSelected
+                      ? 'border-2 font-semibold'
+                      : 'border border-border hover:border-[rgba(176,132,66,0.5)]'
+                  )}
+                  style={isSelected ? {
+                    borderColor: 'var(--ds-gold-primary)',
+                    background: 'rgba(176,132,66,0.10)',
+                    color: 'var(--ds-gold-primary)',
+                  } : {
+                    background: 'var(--ds-bg-secondary)',
+                  }}
+                >
+                  <div className="text-2xl mb-1">{icon}</div>
+                  <div className="text-xs">{t(labelKey)}</div>
+                </button>
+              );
+            })}
           </div>
         </section>
 
         {/* Date */}
         <section>
           <h2 className="font-semibold mb-3 flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" />
+            <Calendar className="h-4 w-4" style={{ color: 'var(--ds-gold-primary)' }} />
             {t('selectDate')}
           </h2>
           <div className="flex gap-2 overflow-x-auto pb-2">
@@ -206,8 +230,14 @@ export default function HomeServiceBooking() {
                   onClick={() => { setSelectedDate(date); setSelectedTime(null); }}
                   className={cn(
                     'flex flex-col items-center p-3 rounded-xl border min-w-[60px] transition-all',
-                    isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:border-primary/50'
+                    isSelected
+                      ? 'border-transparent text-white'
+                      : 'border-border hover:border-[rgba(176,132,66,0.5)]'
                   )}
+                  style={isSelected
+                    ? { background: 'var(--ds-gold-primary)' }
+                    : { background: 'var(--ds-bg-secondary)' }
+                  }
                 >
                   <span className="text-xs">{format(date, 'EEE')}</span>
                   <span className="text-lg font-bold">{format(date, 'd')}</span>
@@ -220,47 +250,53 @@ export default function HomeServiceBooking() {
         {/* Time */}
         <section>
           <h2 className="font-semibold mb-3 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-primary" />
+            <Clock className="h-4 w-4" style={{ color: 'var(--ds-gold-primary)' }} />
             {t('selectTime')}
           </h2>
           <div className="grid grid-cols-4 gap-2">
-            {timeSlots.map(slot => (
-              <button
-                key={slot}
-                onClick={() => setSelectedTime(slot)}
-                className={cn(
-                  'py-2 rounded-lg border text-sm transition-all',
-                  selectedTime === slot
-                    ? 'border-primary bg-primary text-primary-foreground font-semibold'
-                    : 'border-border hover:border-primary/50'
-                )}
-              >
-                {slot}
-              </button>
-            ))}
+            {timeSlots.map(slot => {
+              const isSelected = selectedTime === slot;
+              return (
+                <button
+                  key={slot}
+                  onClick={() => setSelectedTime(slot)}
+                  className={cn(
+                    'py-2 rounded-lg border text-sm transition-all',
+                    isSelected
+                      ? 'border-transparent text-white font-semibold'
+                      : 'border-border hover:border-[rgba(176,132,66,0.5)]'
+                  )}
+                  style={isSelected
+                    ? { background: 'var(--ds-gold-primary)' }
+                    : { background: 'var(--ds-bg-secondary)' }
+                  }
+                >
+                  {slot}
+                </button>
+              );
+            })}
           </div>
         </section>
 
         {/* Location */}
         <section>
           <h2 className="font-semibold mb-3 flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-primary" />
+            <MapPin className="h-4 w-4" style={{ color: 'var(--ds-gold-primary)' }} />
             {t('shareYourLocation')}
           </h2>
-          <Button
-            variant={location ? 'outline' : 'default'}
-            className="w-full"
+          <button
+            className="btn-secondary w-full h-11 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={getLocation}
             disabled={gettingLocation}
           >
             {gettingLocation ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t('gettingLocation')}</>
+              <><Loader2 className="h-4 w-4 animate-spin" />{t('gettingLocation')}</>
             ) : location ? (
-              <><Navigation className="h-4 w-4 mr-2 text-green-500" />{t('locationShared')} ✓</>
+              <><Navigation className="h-4 w-4 text-green-500" />{t('locationShared')} ✓</>
             ) : (
-              <><Navigation className="h-4 w-4 mr-2" />{t('shareLocation')}</>
+              <><Navigation className="h-4 w-4" />{t('shareLocation')}</>
             )}
-          </Button>
+          </button>
           {location && (
             <p className="text-xs text-muted-foreground mt-1 text-center">
               {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
@@ -271,27 +307,27 @@ export default function HomeServiceBooking() {
         {/* Address Description */}
         <section>
           <h2 className="font-semibold mb-2 text-sm">{t('addressDescription')}</h2>
-          <Textarea
+          <textarea
+            className="ds-input w-full resize-none p-3"
             placeholder={t('addressDescriptionPlaceholder')}
             value={addressDescription}
             onChange={e => setAddressDescription(e.target.value)}
-            className="resize-none"
             rows={2}
           />
         </section>
 
         {/* Submit */}
-        <Button
-          className="w-full h-12 text-base"
+        <button
+          className="btn-primary w-full h-12 text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => bookingMutation.mutate()}
           disabled={bookingMutation.isPending || !serviceType || !selectedTime || !location}
         >
           {bookingMutation.isPending ? (
-            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t('findingBarbers')}</>
+            <><Loader2 className="h-4 w-4 animate-spin" />{t('findingBarbers')}</>
           ) : (
-            <><Phone className="h-4 w-4 mr-2" />{t('sendRequestToBarbers')}</>
+            <><Phone className="h-4 w-4" />{t('sendRequestToBarbers')}</>
           )}
-        </Button>
+        </button>
       </main>
     </div>
   );
