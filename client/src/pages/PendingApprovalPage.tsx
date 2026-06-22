@@ -12,7 +12,9 @@ export default function PendingApprovalPage() {
   const [, navigate] = useLocation();
 
   const handleLogout = async () => {
-    await fetch(toAbsoluteUrl('/api/logout'), { method: 'POST' });
+    try {
+      await fetch(toAbsoluteUrl('/api/logout'), { method: 'POST', credentials: 'include' });
+    } catch (_) {}
     queryClient.clear();
     navigate('/login');
   };

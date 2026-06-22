@@ -130,7 +130,9 @@ export default function EmployeeTasksPage() {
             variant="ghost"
             size="sm"
             onClick={async () => {
-              await fetch(toAbsoluteUrl('/api/logout'), { method: 'POST' });
+              try {
+                await fetch(toAbsoluteUrl('/api/logout'), { method: 'POST', credentials: 'include' });
+              } catch (_) {}
               queryClient.clear();
               navigate('/login');
             }}

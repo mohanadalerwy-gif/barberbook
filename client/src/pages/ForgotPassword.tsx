@@ -3,9 +3,6 @@ import { useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/lib/i18n';
 import { toAbsoluteUrl } from '@/lib/queryClient';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Scissors } from 'lucide-react';
 
@@ -50,81 +47,116 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center space-y-2">
-          <div className="flex justify-center">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Scissors className="h-6 w-6 text-primary" />
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div
+        className="ds-card w-full max-w-sm"
+        style={{
+          borderRadius: 'var(--ds-radius-lg)',
+          padding: '32px 24px 28px',
+          borderTop: '3px solid var(--ds-gold-primary)',
+        }}
+      >
+        {/* Icon badge */}
+        <div className="flex justify-center mb-4">
+          <div
+            style={{
+              background: 'rgba(176, 132, 66, 0.12)',
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Scissors style={{ width: 24, height: 24, color: 'var(--ds-gold-primary)' }} />
+          </div>
+        </div>
+
+        <h2
+          className="text-xl font-semibold text-center mb-1"
+          style={{ color: 'var(--ds-gold-primary)' }}
+        >
+          {t('forgotPasswordTitle')}
+        </h2>
+        <p className="text-sm text-center text-muted-foreground mb-6">{t('forgotPasswordSubtitle')}</p>
+
+        {sent ? (
+          <div className="space-y-4">
+            <p className="text-sm text-center text-muted-foreground">{t('resetCodeSent')}</p>
+
+            {devToken && (
+              <div
+                className="rounded-xl p-4 text-center space-y-1"
+                style={{
+                  background: 'rgba(176, 132, 66, 0.08)',
+                  border: '1px dashed var(--ds-gold-primary)',
+                }}
+              >
+                <p className="text-xs text-muted-foreground">{t('resetCodeDevHint')}</p>
+                <p
+                  className="text-2xl font-bold tracking-widest"
+                  style={{ color: 'var(--ds-gold-primary)' }}
+                >
+                  {devToken}
+                </p>
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="btn-primary w-full py-3"
+              onClick={() => navigate('/reset-password')}
+            >
+              {t('resetPassword')}
+            </button>
+
+            <div className="text-center text-sm text-muted-foreground">
+              <button
+                type="button"
+                className="underline-offset-4 hover:underline"
+                style={{ color: 'var(--ds-gold-primary)' }}
+                onClick={() => navigate('/login')}
+              >
+                {t('backToLogin')}
+              </button>
             </div>
           </div>
-          <CardTitle className="text-2xl">{t('forgotPasswordTitle')}</CardTitle>
-          <CardDescription>{t('forgotPasswordSubtitle')}</CardDescription>
-        </CardHeader>
-
-        <CardContent>
-          {sent ? (
-            <div className="space-y-4">
-              <p className="text-sm text-center text-muted-foreground">{t('resetCodeSent')}</p>
-
-              {devToken && (
-                <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-4 text-center space-y-1">
-                  <p className="text-xs text-muted-foreground">{t('resetCodeDevHint')}</p>
-                  <p className="text-2xl font-bold tracking-widest text-primary">{devToken}</p>
-                </div>
-              )}
-
-              <Button
-                className="w-full"
-                onClick={() => navigate('/reset-password')}
-              >
-                {t('resetPassword')}
-              </Button>
-
-              <div className="text-center text-sm text-muted-foreground">
-                <button
-                  type="button"
-                  className="text-primary underline-offset-4 hover:underline"
-                  onClick={() => navigate('/login')}
-                >
-                  {t('backToLogin')}
-                </button>
-              </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1">
+              <Label htmlFor="email">{t('email')}</Label>
+              <input
+                id="email"
+                type="email"
+                required
+                className="ds-input w-full px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
+              />
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <Label htmlFor="email">{t('email')}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                />
-              </div>
 
-              {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? t('loading') : t('sendResetCode')}
-              </Button>
+            <button type="submit" className="btn-primary w-full py-3" disabled={loading}>
+              {loading ? t('loading') : t('sendResetCode')}
+            </button>
 
-              <div className="text-center text-sm text-muted-foreground">
-                <button
-                  type="button"
-                  className="text-primary underline-offset-4 hover:underline"
-                  onClick={() => navigate('/login')}
-                >
-                  {t('backToLogin')}
-                </button>
-              </div>
-            </form>
-          )}
-        </CardContent>
-      </Card>
+            <div className="text-center text-sm text-muted-foreground">
+              <button
+                type="button"
+                className="underline-offset-4 hover:underline"
+                style={{ color: 'var(--ds-gold-primary)' }}
+                onClick={() => navigate('/login')}
+              >
+                {t('backToLogin')}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

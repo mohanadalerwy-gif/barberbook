@@ -3,9 +3,6 @@ import { useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toAbsoluteUrl } from '@/lib/queryClient';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { MailCheck } from 'lucide-react';
 
 const COOLDOWN_SECONDS = 60;
@@ -112,62 +109,93 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4" dir={isRtl ? 'rtl' : 'ltr'}>
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center space-y-2">
-          <div className="flex justify-center">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <MailCheck className="h-6 w-6 text-primary" />
-            </div>
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      dir={isRtl ? 'rtl' : 'ltr'}
+    >
+      <div
+        className="ds-card w-full max-w-sm"
+        style={{
+          borderRadius: 'var(--ds-radius-lg)',
+          padding: '32px 24px 28px',
+          borderTop: '3px solid var(--ds-gold-primary)',
+        }}
+      >
+        {/* Icon badge */}
+        <div className="flex justify-center mb-4">
+          <div
+            style={{
+              background: 'rgba(176, 132, 66, 0.12)',
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <MailCheck style={{ width: 24, height: 24, color: 'var(--ds-gold-primary)' }} />
           </div>
-          <CardTitle className="text-2xl">{t('otpTitle')}</CardTitle>
-          <CardDescription>{t('otpSubtitle')}</CardDescription>
-        </CardHeader>
+        </div>
 
-        <CardContent>
-          <form onSubmit={handleVerify} className="space-y-6">
-            <div className="flex justify-center gap-2" onPaste={handlePaste}>
-              {digits.map((d, i) => (
-                <Input
-                  key={i}
-                  ref={el => { inputRefs.current[i] = el; }}
-                  value={d}
-                  onChange={e => handleDigit(i, e.target.value)}
-                  onKeyDown={e => handleKeyDown(i, e)}
-                  inputMode="numeric"
-                  maxLength={1}
-                  className="w-11 h-13 text-center text-xl font-bold"
-                  autoFocus={i === 0}
-                />
-              ))}
-            </div>
+        <h2
+          className="text-xl font-semibold text-center mb-1"
+          style={{ color: 'var(--ds-gold-primary)' }}
+        >
+          {t('otpTitle')}
+        </h2>
+        <p className="text-sm text-center text-muted-foreground mb-6">{t('otpSubtitle')}</p>
 
-            {error && <p className="text-sm text-destructive text-center">{error}</p>}
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? t('loading') : t('otpVerify')}
-            </Button>
-          </form>
-
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            {t('otpNoCode')}{' '}
-            {cooldown > 0 ? (
-              <span className="text-primary">
-                {t('otpResendIn', { seconds: cooldown })}
-              </span>
-            ) : (
-              <button
-                type="button"
-                className="text-primary underline-offset-4 hover:underline disabled:opacity-50"
-                onClick={handleResend}
-                disabled={resending}
-              >
-                {resending ? t('loading') : t('otpResend')}
-              </button>
-            )}
+        <form onSubmit={handleVerify} className="space-y-6">
+          {/* OTP digit boxes */}
+          <div className="flex justify-center gap-2" onPaste={handlePaste}>
+            {digits.map((d, i) => (
+              <input
+                key={i}
+                ref={el => { inputRefs.current[i] = el; }}
+                value={d}
+                onChange={e => handleDigit(i, e.target.value)}
+                onKeyDown={e => handleKeyDown(i, e)}
+                inputMode="numeric"
+                maxLength={1}
+                autoFocus={i === 0}
+                className="ds-input text-center text-xl font-bold"
+                style={{
+                  width: 48,
+                  height: 52,
+                  padding: 0,
+                  borderColor: d ? 'var(--ds-gold-primary)' : undefined,
+                }}
+              />
+            ))}
           </div>
-        </CardContent>
-      </Card>
+
+          {error && <p className="text-sm text-destructive text-center">{error}</p>}
+
+          <button type="submit" className="btn-primary w-full py-3" disabled={loading}>
+            {loading ? t('loading') : t('otpVerify')}
+          </button>
+        </form>
+
+        <div className="mt-4 text-center text-sm text-muted-foreground">
+          {t('otpNoCode')}{' '}
+          {cooldown > 0 ? (
+            <span style={{ color: 'var(--ds-gold-primary)' }}>
+              {t('otpResendIn', { seconds: cooldown })}
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="underline-offset-4 hover:underline disabled:opacity-50"
+              style={{ color: 'var(--ds-gold-primary)' }}
+              onClick={handleResend}
+              disabled={resending}
+            >
+              {resending ? t('loading') : t('otpResend')}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

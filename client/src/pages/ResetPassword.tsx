@@ -2,9 +2,6 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import { toAbsoluteUrl } from '@/lib/queryClient';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Scissors } from 'lucide-react';
 
@@ -58,88 +55,120 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center space-y-2">
-          <div className="flex justify-center">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Scissors className="h-6 w-6 text-primary" />
-            </div>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div
+        className="ds-card w-full max-w-sm"
+        style={{
+          borderRadius: 'var(--ds-radius-lg)',
+          padding: '32px 24px 28px',
+          borderTop: '3px solid var(--ds-gold-primary)',
+        }}
+      >
+        {/* Icon badge */}
+        <div className="flex justify-center mb-4">
+          <div
+            style={{
+              background: 'rgba(176, 132, 66, 0.12)',
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Scissors style={{ width: 24, height: 24, color: 'var(--ds-gold-primary)' }} />
           </div>
-          <CardTitle className="text-2xl">{t('resetPasswordTitle')}</CardTitle>
-          <CardDescription>{t('resetPasswordSubtitle')}</CardDescription>
-        </CardHeader>
+        </div>
 
-        <CardContent>
-          {success ? (
-            <div className="space-y-4">
-              <p className="text-sm text-center text-muted-foreground">{t('passwordResetSuccess')}</p>
-              <Button className="w-full" onClick={() => navigate('/login')}>
-                {t('signIn')}
-              </Button>
+        <h2
+          className="text-xl font-semibold text-center mb-1"
+          style={{ color: 'var(--ds-gold-primary)' }}
+        >
+          {t('resetPasswordTitle')}
+        </h2>
+        <p className="text-sm text-center text-muted-foreground mb-6">{t('resetPasswordSubtitle')}</p>
+
+        {success ? (
+          <div className="space-y-4 text-center">
+            <div
+              className="rounded-xl p-4"
+              style={{
+                background: 'rgba(176, 132, 66, 0.08)',
+                border: '1px solid var(--ds-bg-tertiary)',
+              }}
+            >
+              <p className="text-sm text-muted-foreground">{t('passwordResetSuccess')}</p>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <Label htmlFor="token">{t('resetCode')}</Label>
-                <Input
-                  id="token"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  required
-                  value={token}
-                  onChange={e => setToken(e.target.value.replace(/\D/g, ''))}
-                  placeholder={t('enterResetCode')}
-                  autoComplete="one-time-code"
-                />
-              </div>
+            <button type="button" className="btn-primary w-full py-3" onClick={() => navigate('/login')}>
+              {t('signIn')}
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1">
+              <Label htmlFor="token">{t('resetCode')}</Label>
+              <input
+                id="token"
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                required
+                className="ds-input w-full px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 text-center tracking-widest"
+                value={token}
+                onChange={e => setToken(e.target.value.replace(/\D/g, ''))}
+                placeholder={t('enterResetCode')}
+                autoComplete="one-time-code"
+              />
+            </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="newPassword">{t('newPassword')}</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  required
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                />
-              </div>
+            <div className="space-y-1">
+              <Label htmlFor="newPassword">{t('newPassword')}</Label>
+              <input
+                id="newPassword"
+                type="password"
+                required
+                className="ds-input w-full px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="new-password"
+              />
+            </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="confirmPassword">{t('confirmNewPassword')}</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                />
-              </div>
+            <div className="space-y-1">
+              <Label htmlFor="confirmPassword">{t('confirmNewPassword')}</Label>
+              <input
+                id="confirmPassword"
+                type="password"
+                required
+                className="ds-input w-full px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="new-password"
+              />
+            </div>
 
-              {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? t('loading') : t('resetPassword')}
-              </Button>
+            <button type="submit" className="btn-primary w-full py-3" disabled={loading}>
+              {loading ? t('loading') : t('resetPassword')}
+            </button>
 
-              <div className="text-center text-sm text-muted-foreground">
-                <button
-                  type="button"
-                  className="text-primary underline-offset-4 hover:underline"
-                  onClick={() => navigate('/forgot-password')}
-                >
-                  {t('forgotPassword')}
-                </button>
-              </div>
-            </form>
-          )}
-        </CardContent>
-      </Card>
+            <div className="text-center text-sm text-muted-foreground">
+              <button
+                type="button"
+                className="underline-offset-4 hover:underline"
+                style={{ color: 'var(--ds-gold-primary)' }}
+                onClick={() => navigate('/forgot-password')}
+              >
+                {t('forgotPassword')}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

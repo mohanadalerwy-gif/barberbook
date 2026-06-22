@@ -239,7 +239,7 @@ export default function AdminPage() {
             <h1 className="text-xl font-bold">{t('adminDashboard')}</h1>
             <p className="text-sm text-muted-foreground">{t('loggedInAs')} {user?.email}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => navigate('/')}>{t('backToApp')}</Button>
+          <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>{t('backToApp')}</Button>
         </div>
       </header>
 

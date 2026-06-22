@@ -155,10 +155,14 @@ export default function ProfilePage() {
   };
 
   const handleLogout = async () => {
-    await fetch(toAbsoluteUrl('/api/logout'), { method: 'POST' });
+    try {
+      await fetch(toAbsoluteUrl('/api/logout'), { method: 'POST', credentials: 'include' });
+    } catch (_) {
+      // network error — clear local state anyway so user is never stuck
+    }
     clearCsrfToken();
-    await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-    navigate('/');
+    queryClient.clear();
+    navigate('/login');
   };
 
   // ── Loading skeleton ─────────────────────────────────────────────────────
