@@ -44,8 +44,7 @@ function RoleRedirect() {
 
   if (user.role === 'admin') return <Redirect to="/panel-d37eb5xcwv" />;
   if (user.role === 'employee') return <Redirect to="/employee" />;
-  if (user.role === 'barber') {
-    if (user.barber?.isApproved === true) return <Redirect to="/barber-dashboard" />;
+  if (user.role === 'barber' && user.barber?.isApproved !== true) {
     return <Redirect to="/pending-approval" />;
   }
 
@@ -71,6 +70,7 @@ function AppShell() {
     location === '/profile' ||
     location === '/settings' ||
     location === '/barber-register' ||
+    location === '/barber-dashboard' ||
     location === '/support' ||
     location.startsWith('/barber/');
 
