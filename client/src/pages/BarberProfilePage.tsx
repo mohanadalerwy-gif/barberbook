@@ -100,16 +100,16 @@ export default function BarberProfilePage() {
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You need to sign in to book an appointment.",
+          title: "غير مصرح",
+          description: "يجب تسجيل الدخول لحجز موعد.",
           variant: "destructive",
         });
         navigate('/login');
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to create booking. Please try again.",
+        title: "خطأ",
+        description: "فشل إنشاء الحجز. يرجى المحاولة مرة أخرى.",
         variant: "destructive",
       });
     },
@@ -156,8 +156,11 @@ export default function BarberProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background/80 backdrop-blur-sm">
-        <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
+      <div className="min-h-screen" style={{ background: 'var(--ds-bg-primary)' }}>
+        <header
+          className="sticky top-0 z-40 backdrop-blur-md px-4 py-4 bg-[#FAF8F5]/90 dark:bg-[#121212]/90"
+          style={{ borderBottom: '1px solid rgba(176,132,66,0.15)' }}
+        >
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
               <ArrowLeft className="h-5 w-5" />
@@ -166,17 +169,15 @@ export default function BarberProfilePage() {
           </div>
         </header>
         <main className="px-4 py-6 space-y-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-16 w-16 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-4 w-24" />
-                </div>
+          <div className="ds-card p-4">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-16 w-16 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-24" />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </main>
       </div>
     );
@@ -184,7 +185,7 @@ export default function BarberProfilePage() {
 
   if (!barber) {
     return (
-      <div className="min-h-screen bg-background/80 backdrop-blur-sm">
+      <div className="min-h-screen" style={{ background: 'var(--ds-bg-primary)' }}>
         <div className="flex items-center justify-center h-full pt-20">
           <p className="text-muted-foreground">{t('barberNotFound')}</p>
         </div>
@@ -195,8 +196,8 @@ export default function BarberProfilePage() {
   const handleConfirm = async () => {
     if (!isAuthenticated) {
       toast({
-        title: "Sign in required",
-        description: "Please sign in to book an appointment.",
+        title: "تسجيل الدخول مطلوب",
+        description: "يرجى تسجيل الدخول لحجز موعد.",
         variant: "destructive",
       });
       navigate('/login');
@@ -223,64 +224,86 @@ export default function BarberProfilePage() {
   if (step === 'success') {
     const serviceLabel = selectedServices.map(s => s.name).join(' + ');
     return (
-      <div className="min-h-screen bg-background/80 backdrop-blur-sm">
-        <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
-          <h1 className="text-xl font-bold text-center">{t('appointmentBooked')}</h1>
+      <div className="min-h-screen" style={{ background: 'var(--ds-bg-primary)' }}>
+        <header
+          className="sticky top-0 z-40 backdrop-blur-md px-4 py-4 bg-[#FAF8F5]/90 dark:bg-[#121212]/90"
+          style={{ borderBottom: '1px solid rgba(176,132,66,0.15)' }}
+        >
+          <h1 className="text-xl font-bold text-center" style={{ color: 'var(--ds-gold-primary)' }}>
+            {t('appointmentBooked')}
+          </h1>
         </header>
 
         <main className="px-4 py-12 text-center">
-          <div className="h-20 w-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
+          <div
+            className="h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ background: 'rgba(176,132,66,0.12)' }}
+          >
+            <CheckCircle className="h-10 w-10" style={{ color: 'var(--ds-gold-primary)' }} />
           </div>
           <h2 className="text-xl font-semibold mb-2">{t('appointmentBooked')}</h2>
           <p className="text-muted-foreground mb-6">
             {t('appointmentConfirmed', { barberName: barber.name })}
           </p>
 
-          <Card className="text-left mb-6">
-            <CardContent className="p-4 space-y-3">
-              <div className="bg-primary/10 rounded-lg p-3 text-center">
-                <p className="text-xs text-muted-foreground mb-1">{t('bookingId')}</p>
-                <p className="text-lg font-bold text-primary font-mono" data-testid="text-booking-id">{bookingId}</p>
+          <div className="ds-card text-left mb-6 p-4 space-y-3">
+            <div
+              className="rounded-lg p-3 text-center"
+              style={{ background: 'rgba(176,132,66,0.10)' }}
+            >
+              <p className="text-xs text-muted-foreground mb-1">{t('bookingId')}</p>
+              <p
+                className="text-lg font-bold font-mono"
+                style={{ color: 'var(--ds-gold-primary)' }}
+                data-testid="text-booking-id"
+              >
+                {bookingId}
+              </p>
+            </div>
+            <Separator />
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t('service')}</span>
+                <span className="font-medium text-right max-w-[60%]">{serviceLabel}</span>
               </div>
-              <Separator />
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('service')}</span>
-                  <span className="font-medium text-right max-w-[60%]">{serviceLabel}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('date')}</span>
-                  <span className="font-medium">{format(selectedDate, 'EEE, MMM d, yyyy')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('time')}</span>
-                  <span className="font-medium">{selectedTime}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('total')}</span>
-                  <span className="font-medium">{totalPrice} {t('sar')}</span>
-                </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t('date')}</span>
+                <span className="font-medium">{format(selectedDate, 'EEE, MMM d, yyyy')}</span>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t('time')}</span>
+                <span className="font-medium">{selectedTime}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t('total')}</span>
+                <span className="font-medium">{totalPrice} {t('sar')}</span>
+              </div>
+            </div>
+          </div>
 
           <div className="space-y-3">
-            <Button
-              variant="outline"
-              className="w-full"
+            <button
+              className="btn-secondary w-full h-11 flex items-center justify-center gap-2"
               onClick={() => openMapsApp({ lat: barber.lat, lng: barber.lng, name: barber.name })}
               data-testid="button-open-location"
             >
-              <Navigation className="h-4 w-4 mr-2" />
+              <Navigation className="h-4 w-4" />
               {t('openLocation')}
-            </Button>
-            <Button className="w-full" onClick={() => navigate('/profile')} data-testid="button-view-bookings">
+            </button>
+            <button
+              className="btn-primary w-full h-12 text-base"
+              onClick={() => navigate('/profile')}
+              data-testid="button-view-bookings"
+            >
               {t('viewMyBookings')}
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => navigate('/')} data-testid="button-go-home">
+            </button>
+            <button
+              className="btn-secondary w-full h-11 flex items-center justify-center gap-2"
+              onClick={() => navigate('/')}
+              data-testid="button-go-home"
+            >
               {t('backToHome')}
-            </Button>
+            </button>
           </div>
         </main>
       </div>
@@ -288,8 +311,11 @@ export default function BarberProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background/80 backdrop-blur-sm">
-      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
+    <div className="min-h-screen" style={{ background: 'var(--ds-bg-primary)' }}>
+      <header
+        className="sticky top-0 z-40 backdrop-blur-md px-4 py-4 bg-[#FAF8F5]/90 dark:bg-[#121212]/90"
+        style={{ borderBottom: '1px solid rgba(176,132,66,0.15)' }}
+      >
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -303,7 +329,7 @@ export default function BarberProfilePage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">
+          <h1 className="text-xl font-bold" style={{ color: 'var(--ds-gold-primary)' }}>
             {step === 'service' && t('selectService')}
             {step === 'time' && t('selectTime')}
             {step === 'confirm' && t('confirmBooking')}
@@ -313,110 +339,142 @@ export default function BarberProfilePage() {
 
       <main className="px-4 py-6 space-y-6">
         {/* Barber header card */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={barber.avatar} alt={barber.name} />
-                <AvatarFallback>{barber.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <h2 className="font-semibold text-lg">{barber.name}</h2>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                    <span>{barber.rating}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5" />
-                    <span>{barber.address || t('nearby')}</span>
-                  </div>
+        <div className="ds-card p-4">
+          <div className="flex items-center gap-4">
+            <Avatar
+              className="h-16 w-16"
+              style={{ ring: '2px solid rgba(176,132,66,0.4)' }}
+            >
+              <AvatarImage src={barber.avatar} alt={barber.name} />
+              <AvatarFallback style={{ background: 'rgba(176,132,66,0.15)', color: 'var(--ds-gold-primary)' }}>
+                {barber.name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h2 className="font-semibold text-lg" style={{ color: 'var(--ds-text-primary)' }}>
+                {barber.name}
+              </h2>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                  <span>{barber.rating}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  <span>{barber.address || t('nearby')}</span>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Step: service selection */}
         {step === 'service' && (
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium">{t('services')}</h3>
-              <span className="text-xs text-muted-foreground">Select one or more</span>
+              <h3 className="font-medium" style={{ color: 'var(--ds-text-primary)' }}>
+                {t('services')}
+              </h3>
+              <span className="text-xs text-muted-foreground">اختر خدمة واحدة أو أكثر</span>
             </div>
 
             {barber.services && barber.services.length > 0 ? (
               barber.services.map((service) => {
                 const isSelected = selectedServices.some(s => s.id === service.id);
                 return (
-                  <Card
+                  <div
                     key={service.id}
-                    className={cn(
-                      "cursor-pointer transition-colors hover-elevate",
-                      isSelected && "ring-2 ring-primary"
-                    )}
+                    className="cursor-pointer transition-all rounded-xl p-4"
+                    style={isSelected ? {
+                      background: 'rgba(176,132,66,0.08)',
+                      border: '2px solid var(--ds-gold-primary)',
+                      boxShadow: 'var(--ds-shadow-sm)',
+                    } : {
+                      background: 'var(--ds-bg-secondary)',
+                      border: '1px solid var(--ds-bg-tertiary)',
+                      boxShadow: 'var(--ds-shadow-sm)',
+                      borderRadius: 'var(--ds-radius-md)',
+                    }}
                     onClick={() => toggleService(service)}
                     data-testid={`service-${service.id}`}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          {/* Checkbox indicator */}
-                          <div className={cn(
-                            "h-5 w-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
-                            isSelected
-                              ? "bg-primary border-primary"
-                              : "border-muted-foreground/40"
-                          )}>
-                            {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
-                          </div>
-                          <div>
-                            <p className="font-medium">
-                              {i18n.language === 'ar' ? (service.nameAr || service.name) : (service.nameEn || service.name)}
-                            </p>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Clock className="h-3.5 w-3.5" />
-                              <span>{service.duration} {t('min')}</span>
-                            </div>
-                          </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {/* Gold checkbox indicator */}
+                        <div
+                          className="h-5 w-5 rounded flex items-center justify-center shrink-0 transition-all"
+                          style={isSelected ? {
+                            background: 'var(--ds-gold-primary)',
+                            border: '2px solid var(--ds-gold-primary)',
+                          } : {
+                            border: '2px solid var(--ds-bg-tertiary)',
+                            background: 'transparent',
+                          }}
+                        >
+                          {isSelected && <Check className="h-3 w-3 text-white" />}
                         </div>
-                        <div className="flex flex-col items-end shrink-0">
-                          {service.displayPrice != null && service.customerPrice != null && service.displayPrice !== service.customerPrice && (
-                            <span className="text-xs text-muted-foreground line-through">{service.displayPrice} {t('sar')}</span>
-                          )}
-                          <span className="font-semibold">{service.customerPrice ?? Math.round(parseFloat(String(service.price)))} {t('sar')}</span>
+                        <div>
+                          <p className="font-medium" style={{ color: 'var(--ds-text-primary)' }}>
+                            {i18n.language === 'ar' ? (service.nameAr || service.name) : (service.nameEn || service.name)}
+                          </p>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Clock className="h-3.5 w-3.5" />
+                            <span>{service.duration} {t('min')}</span>
+                          </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <div className="flex flex-col items-end shrink-0">
+                        {service.displayPrice != null && service.customerPrice != null && service.displayPrice !== service.customerPrice && (
+                          <span className="text-xs text-muted-foreground line-through">
+                            {service.displayPrice} {t('sar')}
+                          </span>
+                        )}
+                        <span
+                          className="font-semibold"
+                          style={{ color: isSelected ? 'var(--ds-gold-primary)' : 'var(--ds-text-primary)' }}
+                        >
+                          {service.customerPrice ?? Math.round(parseFloat(String(service.price)))} {t('sar')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 );
               })
             ) : (
-              <Card>
-                <CardContent className="py-6 text-center text-muted-foreground">
-                  No services available
-                </CardContent>
-              </Card>
+              <div
+                className="rounded-xl p-6 text-center text-muted-foreground"
+                style={{ background: 'var(--ds-bg-secondary)', border: '1px solid var(--ds-bg-tertiary)' }}
+              >
+                لا توجد خدمات متاحة
+              </div>
             )}
 
             {/* Live total summary */}
             {selectedServices.length > 0 && (
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-center justify-between">
+              <div
+                className="rounded-xl p-3 flex items-center justify-between"
+                style={{
+                  background: 'rgba(176,132,66,0.08)',
+                  border: '1px solid rgba(176,132,66,0.25)',
+                }}
+              >
                 <span className="text-sm text-muted-foreground">
-                  {selectedServices.length} service{selectedServices.length > 1 ? 's' : ''} &middot; {totalDuration} min
+                  {selectedServices.length} {selectedServices.length === 1 ? 'خدمة' : 'خدمات'} · {totalDuration} دقيقة
                 </span>
-                <span className="font-semibold">{totalPrice} {t('sar')}</span>
+                <span className="font-semibold" style={{ color: 'var(--ds-gold-primary)' }}>
+                  {totalPrice} {t('sar')}
+                </span>
               </div>
             )}
 
-            <Button
-              className="w-full mt-4"
+            <button
+              className="btn-primary w-full h-12 text-base mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={selectedServices.length === 0}
               onClick={() => setStep('time')}
               data-testid="button-continue"
             >
               {t('continue')}
-            </Button>
+            </button>
           </section>
         )}
 
@@ -424,7 +482,13 @@ export default function BarberProfilePage() {
         {step === 'time' && (
           <section className="space-y-4">
             <div>
-              <h3 className="font-medium mb-3">{t('selectDate')}</h3>
+              <h3
+                className="font-medium mb-3 flex items-center gap-2"
+                style={{ color: 'var(--ds-text-primary)' }}
+              >
+                <Clock className="h-4 w-4" style={{ color: 'var(--ds-gold-primary)' }} />
+                {t('selectDate')}
+              </h3>
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {weekDays.map((day) => {
                   const isOff = daysOffSet.has(format(day, 'EEEE'));
@@ -438,16 +502,20 @@ export default function BarberProfilePage() {
                         setSelectedTime(null);
                       }}
                       className={cn(
-                        "flex flex-col items-center p-3 rounded-lg min-w-[60px] transition-colors",
+                        'flex flex-col items-center p-3 rounded-xl border min-w-[60px] transition-all',
                         isSelected
-                          ? "bg-primary text-primary-foreground"
+                          ? 'border-transparent text-white'
                           : isOff
-                          ? "opacity-40 cursor-not-allowed bg-muted"
-                          : "bg-muted hover-elevate"
+                          ? 'opacity-40 cursor-not-allowed border-border'
+                          : 'border-border hover:border-[rgba(176,132,66,0.5)]'
                       )}
+                      style={isSelected
+                        ? { background: 'var(--ds-gold-primary)' }
+                        : { background: 'var(--ds-bg-secondary)' }
+                      }
                       data-testid={`date-${format(day, 'yyyy-MM-dd')}`}
                     >
-                      <span className="text-xs opacity-70">{format(day, 'EEE')}</span>
+                      <span className="text-xs opacity-80">{format(day, 'EEE')}</span>
                       <span className="text-lg font-semibold">{format(day, 'd')}</span>
                       {isOff && (
                         <span className="text-xs leading-none opacity-70">{t('dayOff')}</span>
@@ -459,102 +527,119 @@ export default function BarberProfilePage() {
             </div>
 
             <div>
-              <h3 className="font-medium mb-3">{t('selectTime')}</h3>
+              <h3
+                className="font-medium mb-3 flex items-center gap-2"
+                style={{ color: 'var(--ds-text-primary)' }}
+              >
+                <Clock className="h-4 w-4" style={{ color: 'var(--ds-gold-primary)' }} />
+                {t('selectTime')}
+              </h3>
               <div className="grid grid-cols-4 gap-2">
                 {timeSlots.map((slot) => (
-                  <Button
+                  <button
                     key={slot.id}
-                    variant={selectedTime === slot.time ? "default" : "outline"}
-                    size="sm"
                     disabled={!slot.available}
                     onClick={() => setSelectedTime(slot.time)}
-                    className={cn(!slot.available && "opacity-50")}
+                    className={cn(
+                      'py-2 rounded-lg border text-sm transition-all',
+                      selectedTime === slot.time
+                        ? 'border-transparent text-white font-semibold'
+                        : !slot.available
+                        ? 'opacity-40 cursor-not-allowed border-border'
+                        : 'border-border hover:border-[rgba(176,132,66,0.5)]'
+                    )}
+                    style={selectedTime === slot.time
+                      ? { background: 'var(--ds-gold-primary)' }
+                      : { background: 'var(--ds-bg-secondary)' }
+                    }
                     data-testid={`time-${slot.time.replace(':', '-')}`}
                   >
                     {slot.time}
-                  </Button>
+                  </button>
                 ))}
               </div>
             </div>
 
-            <Button
-              className="w-full mt-4"
+            <button
+              className="btn-primary w-full h-12 text-base mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!selectedTime}
               onClick={() => setStep('confirm')}
               data-testid="button-continue"
             >
               {t('continue')}
-            </Button>
+            </button>
           </section>
         )}
 
         {/* Step: confirm */}
         {step === 'confirm' && selectedServices.length > 0 && (
           <section className="space-y-4">
-            <Card>
-              <CardContent className="p-4 space-y-3">
-                <h3 className="font-medium">{t('bookingSummary')}</h3>
-                <Separator />
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('barber')}</span>
-                    <span className="font-medium">{barber.name}</span>
-                  </div>
-
-                  {/* List each selected service */}
-                  {selectedServices.map((s, i) => {
-                    const custPrice = s.customerPrice ?? Math.round(parseFloat(String(s.price)));
-                    const dispPrice = s.displayPrice ?? custPrice;
-                    return (
-                      <div key={s.id} className="flex justify-between items-center gap-2">
-                        <span className="text-muted-foreground">
-                          {i === 0 ? t('service') : ''}
-                        </span>
-                        <span className="font-medium flex items-center gap-1.5 flex-wrap justify-end">
-                          {i18n.language === 'ar' ? (s.nameAr || s.name) : (s.nameEn || s.name)}
-                          {' — '}
-                          {dispPrice !== custPrice && (
-                            <span className="text-xs text-muted-foreground line-through">{dispPrice}</span>
-                          )}
-                          <span>{custPrice} {t('sar')}</span>
-                        </span>
-                      </div>
-                    );
-                  })}
-
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('date')}</span>
-                    <span className="font-medium">{format(selectedDate, 'EEE, MMM d, yyyy')}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('time')}</span>
-                    <span className="font-medium">{selectedTime}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('duration')}</span>
-                    <span className="font-medium">{totalDuration} {t('min')}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between text-base">
-                    <span className="font-medium">{t('total')}</span>
-                    <span className="font-bold">{totalPrice} {t('sar')}</span>
-                  </div>
+            <div className="ds-card p-4 space-y-3">
+              <h3 className="font-medium" style={{ color: 'var(--ds-gold-primary)' }}>
+                {t('bookingSummary')}
+              </h3>
+              <Separator />
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('barber')}</span>
+                  <span className="font-medium">{barber.name}</span>
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* List each selected service */}
+                {selectedServices.map((s, i) => {
+                  const custPrice = s.customerPrice ?? Math.round(parseFloat(String(s.price)));
+                  const dispPrice = s.displayPrice ?? custPrice;
+                  return (
+                    <div key={s.id} className="flex justify-between items-center gap-2">
+                      <span className="text-muted-foreground">
+                        {i === 0 ? t('service') : ''}
+                      </span>
+                      <span className="font-medium flex items-center gap-1.5 flex-wrap justify-end">
+                        {i18n.language === 'ar' ? (s.nameAr || s.name) : (s.nameEn || s.name)}
+                        {' — '}
+                        {dispPrice !== custPrice && (
+                          <span className="text-xs text-muted-foreground line-through">{dispPrice}</span>
+                        )}
+                        <span style={{ color: 'var(--ds-gold-primary)' }}>{custPrice} {t('sar')}</span>
+                      </span>
+                    </div>
+                  );
+                })}
+
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('date')}</span>
+                  <span className="font-medium">{format(selectedDate, 'EEE, MMM d, yyyy')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('time')}</span>
+                  <span className="font-medium">{selectedTime}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('duration')}</span>
+                  <span className="font-medium">{totalDuration} {t('min')}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between text-base">
+                  <span className="font-medium">{t('total')}</span>
+                  <span className="font-bold" style={{ color: 'var(--ds-gold-primary)' }}>
+                    {totalPrice} {t('sar')}
+                  </span>
+                </div>
+              </div>
+            </div>
 
             <p className="text-sm text-muted-foreground text-center">
               {t('confirmAppointment')}
             </p>
 
-            <Button
-              className="w-full"
+            <button
+              className="btn-primary w-full h-12 text-base disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleConfirm}
               disabled={createBookingMutation.isPending}
               data-testid="button-confirm"
             >
               {createBookingMutation.isPending ? t('loading') : t('confirmBookingBtn')}
-            </Button>
+            </button>
           </section>
         )}
       </main>
