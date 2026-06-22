@@ -1,11 +1,16 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { isToday, isFuture, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar } from 'lucide-react';
 import BookingCard, { type Booking } from '@/components/BookingCard';
+import BarberBookingCard, { type BarberBooking } from '@/components/BarberBookingCard';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useAuth } from '@/hooks/useAuth';
+import { apiRequest } from '@/lib/queryClient';
+
+// ── Shared sub-components ────────────────────────────────────────────────────
 
 function SectionEmptyState({ message }: { message: string }) {
   return (
@@ -38,22 +43,35 @@ function SectionHeader({ label }: { label: string }) {
   );
 }
 
+// ── Page ─────────────────────────────────────────────────────────────────────
+
 export default function MyAppointmentsPage() {
   const { t, i18n } = useTranslation();
   const { isAuthenticated, user } = useAuth();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
   }, [i18n.language]);
 
   const isCustomer = isAuthenticated && user?.role !== 'barber';
+  const isBarber   = isAuthenticated && user?.role === 'barber';
 
+  // ── Customer query (unchanged) ───────────────────────────────────────────
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ['/api/bookings'],
     enabled: isCustomer,
     refetchInterval: 30_000,
   });
 
+  // ── Barber query — same cache key; server already returns incoming bookings
+  const { data: barberBookings = [], isLoading: barberLoading } = useQuery<BarberBooking[]>({
+    queryKey: ['/api/bookings'],
+    enabled: isBarber,
+    refetchInterval: 30_000,
+  });
+
+  // ── Customer filters (unchanged) ─────────────────────────────────────────
   const upcomingBookings = bookings.filter(
     b =>
       b.status === 'pending' || b.status === 'confirmed' || b.status === 'accepted' ||
@@ -66,6 +84,57 @@ export default function MyAppointmentsPage() {
       (b.status === 'completed' && !!b.rating) ||
       b.status === 'declined' ||
       b.status === 'cancelled',
+  );
+
+  // ── Barber filters ────────────────────────────────────────────────────────
+  const pendingBookings = barberBookings.filter(b => b.status === 'pending');
+
+  const activeBookings = barberBookings.filter(b =>
+    ['confirmed', 'traveling', 'arrived'].includes(b.status) &&
+    (isToday(parseISO(b.date)) || isFuture(parseISO(b.date))),
+  );
+
+  const pastBarberBookings = barberBookings.filter(b =>
+    ['completed', 'declined', 'cancelled'].includes(b.status),
+  );
+
+  // ── Barber status mutations (same logic as BarberDashboard) ──────────────
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      apiRequest('PATCH', `/api/bookings/${id}/status`, { status }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }),
+  });
+
+  const handleAccept   = (b: BarberBooking) => updateStatusMutation.mutate({ id: b.id, status: 'confirmed' });
+  const handleDecline  = (b: BarberBooking) => updateStatusMutation.mutate({ id: b.id, status: 'declined' });
+  const handleComplete = (b: BarberBooking) => updateStatusMutation.mutate({ id: b.id, status: 'completed' });
+  const handleTraveling = (b: BarberBooking) => updateStatusMutation.mutate({ id: b.id, status: 'traveling' });
+  const handleArrived  = (b: BarberBooking) => updateStatusMutation.mutate({ id: b.id, status: 'arrived' });
+
+  // ── Shared loading skeleton ───────────────────────────────────────────────
+  const loadingSkeleton = (
+    <section className="space-y-3">
+      <Skeleton className="h-5 w-32 rounded-xl" />
+      {[1, 2].map(i => (
+        <div
+          key={i}
+          className="rounded-2xl bg-card p-4"
+          style={{ border: '1px solid rgba(176,132,66,0.12)' }}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-3 w-28" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <div className="space-y-2 flex flex-col items-end">
+              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="h-4 w-12" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </section>
   );
 
   return (
@@ -84,73 +153,118 @@ export default function MyAppointmentsPage() {
       </header>
 
       <main className="px-4 pt-4 pb-8 space-y-6">
-        {/* ── Loading skeletons ── */}
-        {isLoading && (
+
+        {/* ══════════════════ BARBER VIEW ══════════════════ */}
+        {isBarber && (
           <>
-            <section className="space-y-3">
-              <Skeleton className="h-5 w-32 rounded-xl" />
-              {[1, 2].map(i => (
-                <div
-                  key={i}
-                  className="rounded-2xl bg-card p-4"
-                  style={{ border: '1px solid rgba(176,132,66,0.12)' }}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-2 flex-1">
-                      <Skeleton className="h-4 w-36" />
-                      <Skeleton className="h-3 w-28" />
-                      <Skeleton className="h-3 w-24" />
+            {barberLoading && loadingSkeleton}
+
+            {!barberLoading && (
+              <>
+                {/* Pending — new requests needing accept / decline */}
+                <section className="space-y-3">
+                  <SectionHeader label="الطلبات الجديدة" />
+                  {pendingBookings.length === 0 ? (
+                    <SectionEmptyState message="لا توجد طلبات جديدة حالياً" />
+                  ) : (
+                    <div className="space-y-3">
+                      {pendingBookings.map(b => (
+                        <BarberBookingCard
+                          key={b.id}
+                          booking={b}
+                          onAccept={handleAccept}
+                          onDecline={handleDecline}
+                          isUpdating={updateStatusMutation.isPending}
+                        />
+                      ))}
                     </div>
-                    <div className="space-y-2 flex flex-col items-end">
-                      <Skeleton className="h-5 w-20 rounded-full" />
-                      <Skeleton className="h-4 w-12" />
+                  )}
+                </section>
+
+                {/* Active — confirmed / traveling / arrived */}
+                <section className="space-y-3">
+                  <SectionHeader label="المواعيد القادمة" />
+                  {activeBookings.length === 0 ? (
+                    <SectionEmptyState message="لا توجد مواعيد قادمة" />
+                  ) : (
+                    <div className="space-y-3">
+                      {activeBookings.map(b => (
+                        <BarberBookingCard
+                          key={b.id}
+                          booking={b}
+                          onComplete={handleComplete}
+                          onTraveling={handleTraveling}
+                          onArrived={handleArrived}
+                          isUpdating={updateStatusMutation.isPending}
+                        />
+                      ))}
                     </div>
-                  </div>
-                </div>
-              ))}
-            </section>
+                  )}
+                </section>
+
+                {/* Past — completed / declined / cancelled (most recent 10) */}
+                {pastBarberBookings.length > 0 && (
+                  <section className="space-y-3">
+                    <SectionHeader label="السابقة" />
+                    <div className="space-y-3">
+                      {pastBarberBookings.slice(0, 10).map(b => (
+                        <BarberBookingCard key={b.id} booking={b} />
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </>
+            )}
           </>
         )}
 
-        {!isLoading && (
+        {/* ══════════════════ CUSTOMER VIEW (unchanged) ══════════════════ */}
+        {!isBarber && (
           <>
-            {/* ── Upcoming section ── */}
-            <section className="space-y-3">
-              <SectionHeader label={t('upcomingAppointments')} />
-              {upcomingBookings.length === 0 ? (
-                <SectionEmptyState message={t('noUpcomingAppointments')} />
-              ) : (
-                <div className="space-y-3">
-                  {upcomingBookings.map((b, idx) => (
-                    <ErrorBoundary key={b.id}>
-                      <div className="animate-fade-slide-up" style={{ animationDelay: `${idx * 80}ms` }}>
-                        <BookingCard booking={b} />
-                      </div>
-                    </ErrorBoundary>
-                  ))}
-                </div>
-              )}
-            </section>
+            {isLoading && loadingSkeleton}
 
-            {/* ── Past section ── */}
-            <section className="space-y-3">
-              <SectionHeader label={t('pastAppointments')} />
-              {pastBookings.length === 0 ? (
-                <SectionEmptyState message={t('noPast')} />
-              ) : (
-                <div className="space-y-3">
-                  {pastBookings.map((b, idx) => (
-                    <ErrorBoundary key={b.id}>
-                      <div className="animate-fade-slide-up" style={{ animationDelay: `${idx * 60}ms` }}>
-                        <BookingCard booking={b} />
-                      </div>
-                    </ErrorBoundary>
-                  ))}
-                </div>
-              )}
-            </section>
+            {!isLoading && (
+              <>
+                {/* ── Upcoming section ── */}
+                <section className="space-y-3">
+                  <SectionHeader label={t('upcomingAppointments')} />
+                  {upcomingBookings.length === 0 ? (
+                    <SectionEmptyState message={t('noUpcomingAppointments')} />
+                  ) : (
+                    <div className="space-y-3">
+                      {upcomingBookings.map((b, idx) => (
+                        <ErrorBoundary key={b.id}>
+                          <div className="animate-fade-slide-up" style={{ animationDelay: `${idx * 80}ms` }}>
+                            <BookingCard booking={b} />
+                          </div>
+                        </ErrorBoundary>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                {/* ── Past section ── */}
+                <section className="space-y-3">
+                  <SectionHeader label={t('pastAppointments')} />
+                  {pastBookings.length === 0 ? (
+                    <SectionEmptyState message={t('noPast')} />
+                  ) : (
+                    <div className="space-y-3">
+                      {pastBookings.map((b, idx) => (
+                        <ErrorBoundary key={b.id}>
+                          <div className="animate-fade-slide-up" style={{ animationDelay: `${idx * 60}ms` }}>
+                            <BookingCard booking={b} />
+                          </div>
+                        </ErrorBoundary>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </>
+            )}
           </>
         )}
+
       </main>
     </div>
   );

@@ -17,7 +17,6 @@ import {
   Headphones,
   ChevronRight,
   LogOut,
-  Lock,
   Tag,
   FileText,
   Shield,
@@ -405,19 +404,6 @@ export default function ProfilePage() {
 
       {/* ── Info & Help ──────────────────────────────────────────────────── */}
       {infoSection(isBarber)}
-
-      {/* ── Barber price notice ──────────────────────────────────────────── */}
-      {isBarber && (
-        <div className="px-4">
-          <div
-            className="rounded-2xl px-4 py-3 flex items-center gap-3"
-            style={{ background: GOLD_CARD_BG, border: `1px solid ${GOLD_BG_12}` }}
-          >
-            <Lock className="h-4 w-4 shrink-0" style={{ color: GOLD }} />
-            <p className="text-sm text-muted-foreground">{t('pricesSetByAdmin')}</p>
-          </div>
-        </div>
-      )}
 
       {/* ── Sign out ─────────────────────────────────────────────────────── */}
       <div className="px-4">
