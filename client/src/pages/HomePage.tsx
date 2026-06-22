@@ -7,7 +7,7 @@ import PromoCarousel from '@/components/PromoCarousel';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import BookingCard, { type Booking } from '@/components/BookingCard';
 import {
-  Calendar, Navigation, Bell, Menu,
+  Calendar, Navigation, Bell,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import logo from '../assets/logo.png';
@@ -53,13 +53,6 @@ export default function HomePage() {
             style={{ background: 'rgba(176,132,66,0.10)' }}
           >
             <Bell className="h-5 w-5" style={{ color: 'var(--ds-gold-primary)' }} />
-          </button>
-          <button
-            className="p-2.5 rounded-xl transition-opacity active:opacity-60"
-            aria-label="Menu"
-            style={{ background: 'rgba(176,132,66,0.10)' }}
-          >
-            <Menu className="h-5 w-5" style={{ color: 'var(--ds-gold-primary)' }} />
           </button>
         </div>
 

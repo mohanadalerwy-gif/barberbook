@@ -3,11 +3,7 @@ import { useLocation } from 'wouter';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ObjectUploader } from '@/components/ObjectUploader';
@@ -84,16 +80,16 @@ export default function ProfileEditPage() {
     if (result.successful && result.successful.length > 0) {
       const uploadedFile = result.successful[0];
       const imageURL = uploadedFile.uploadURL;
-      
+
       if (imageURL) {
         setIsUploadingImage(true);
         try {
           const res = await apiRequest('PUT', '/api/profile-images', { imageURL });
           const data = await res.json();
-          
+
           form.setValue('profileImageUrl', data.objectPath);
           setPreviewImageUrl(data.objectPath);
-          
+
           toast({
             title: t('success'),
             description: t('imageUploaded'),
@@ -117,8 +113,8 @@ export default function ProfileEditPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: 'var(--ds-gold-primary)' }} />
       </div>
     );
   }
@@ -132,47 +128,64 @@ export default function ProfileEditPage() {
 
   const getImageSrc = () => {
     if (previewImageUrl) {
-      if (previewImageUrl.startsWith('/objects/')) {
-        return previewImageUrl;
-      }
       return previewImageUrl;
     }
     return '';
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
+    <div className="min-h-screen">
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <header
+        className="sticky top-0 z-40 px-4 py-3.5 backdrop-blur-md"
+        style={{
+          background: 'rgba(250,248,245,0.88)',
+          borderBottom: '1px solid rgba(176,132,66,0.14)',
+        }}
+      >
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
+            className="p-2 rounded-xl active:opacity-60 transition-opacity"
+            style={{ background: 'rgba(176,132,66,0.10)' }}
             onClick={() => window.history.back()}
             data-testid="button-back"
           >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-bold">{t('editProfile')}</h1>
+            <ArrowLeft className="h-5 w-5" style={{ color: 'var(--ds-gold-primary)' }} />
+          </button>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--ds-gold-primary)' }}>
+            {t('editProfile')}
+          </h1>
         </div>
       </header>
 
       <main className="px-4 py-6 space-y-6">
-        <div className="flex flex-col items-center gap-4">
+        {/* ── Avatar + upload ─────────────────────────────────────────── */}
+        <div className="flex flex-col items-center gap-4 pt-2">
           <div className="relative">
-            <Avatar className="h-24 w-24">
-              <AvatarImage 
-                src={getImageSrc()} 
-                alt={userName} 
-              />
-              <AvatarFallback className="text-2xl">
+            <Avatar
+              className="h-24 w-24"
+              style={{ border: '2.5px solid rgba(176,132,66,0.35)' }}
+            >
+              <AvatarImage src={getImageSrc()} alt={userName} />
+              <AvatarFallback
+                style={{
+                  background: 'rgba(176,132,66,0.12)',
+                  color: 'var(--ds-gold-primary)',
+                  fontWeight: 700,
+                  fontSize: '1.5rem',
+                }}
+              >
                 {userName.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <div className="absolute bottom-0 right-0 p-1 bg-primary rounded-full">
-              <Camera className="h-4 w-4 text-primary-foreground" />
+            <div
+              className="absolute bottom-0 end-0 p-1.5 rounded-full"
+              style={{ background: 'var(--ds-gold-primary)' }}
+            >
+              <Camera className="h-3.5 w-3.5 text-white" />
             </div>
           </div>
-          
+
           <ObjectUploader
             maxNumberOfFiles={1}
             maxFileSize={5242880}
@@ -180,6 +193,7 @@ export default function ProfileEditPage() {
             onGetUploadParameters={handleGetUploadParameters}
             onComplete={handleUploadComplete}
             buttonVariant="outline"
+            buttonClassName="border-[rgba(176,132,66,0.45)] text-[#B08442] bg-[rgba(176,132,66,0.06)] hover:bg-[rgba(176,132,66,0.14)] hover:text-[#B08442]"
             disabled={isUploadingImage}
           >
             <div className="flex items-center gap-2">
@@ -193,57 +207,71 @@ export default function ProfileEditPage() {
           </ObjectUploader>
         </div>
 
+        {/* ── Form ────────────────────────────────────────────────────── */}
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">{t('personalInfo')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">{t('firstName')}</Label>
-                <Input
-                  id="firstName"
-                  {...form.register('firstName')}
-                  placeholder={t('enterFirstName')}
-                  data-testid="input-first-name"
-                />
-              </div>
+          {/* Personal info card */}
+          <div className="ds-card space-y-4">
+            <h2 className="font-bold text-base" style={{ color: 'var(--ds-gold-primary)' }}>
+              {t('personalInfo')}
+            </h2>
 
-              <div className="space-y-2">
-                <Label htmlFor="lastName">{t('lastName')}</Label>
-                <Input
-                  id="lastName"
-                  {...form.register('lastName')}
-                  placeholder={t('enterLastName')}
-                  data-testid="input-last-name"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <label htmlFor="firstName" className="text-sm font-medium">
+                {t('firstName')}
+              </label>
+              <input
+                id="firstName"
+                {...form.register('firstName')}
+                placeholder={t('enterFirstName')}
+                className="ds-input w-full px-3 h-10 text-sm"
+                data-testid="input-first-name"
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label>{t('phoneNumber')}</Label>
-                <div className="p-3 bg-muted rounded-md text-muted-foreground">
-                  {user.phone || t('notProvided')}
-                </div>
-                <p className="text-xs text-muted-foreground">{t('phoneNotEditable')}</p>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="space-y-1.5">
+              <label htmlFor="lastName" className="text-sm font-medium">
+                {t('lastName')}
+              </label>
+              <input
+                id="lastName"
+                {...form.register('lastName')}
+                placeholder={t('enterLastName')}
+                className="ds-input w-full px-3 h-10 text-sm"
+                data-testid="input-last-name"
+              />
+            </div>
 
-          <Button 
-            type="submit" 
-            className="w-full"
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">{t('phoneNumber')}</label>
+              <div
+                className="px-3 h-10 flex items-center rounded-xl text-sm text-muted-foreground"
+                style={{
+                  background: 'var(--ds-bg-tertiary)',
+                  border: '2px solid var(--ds-bg-tertiary)',
+                }}
+              >
+                {user.phone || t('notProvided')}
+              </div>
+              <p className="text-xs text-muted-foreground">{t('phoneNotEditable')}</p>
+            </div>
+          </div>
+
+          {/* Save button */}
+          <button
+            type="submit"
+            className="btn-primary w-full h-12 flex items-center justify-center gap-2 text-sm"
             disabled={updateProfileMutation.isPending || isUploadingImage}
             data-testid="button-save-profile"
           >
             {updateProfileMutation.isPending ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
                 {t('saving')}
               </>
             ) : (
               t('saveChanges')
             )}
-          </Button>
+          </button>
         </form>
       </main>
     </div>

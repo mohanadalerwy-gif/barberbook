@@ -1,45 +1,120 @@
-import { useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useLocation, useSearch } from 'wouter';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import {
   User as UserIcon,
-  Calendar,
-  Settings,
-  Clock,
-  CheckCircle,
-  Scissors,
   Edit,
-  MapPin,
-  Navigation,
+  Scissors,
+  Moon,
+  Sun,
+  Globe,
+  Info,
+  Headphones,
+  ChevronRight,
+  LogOut,
+  Lock,
+  Tag,
+  FileText,
+  Shield,
 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
 import { clearCsrfToken, toAbsoluteUrl } from '@/lib/queryClient';
 
-interface Booking {
-  id: string;
-  bookingId: string;
-  barberId: string;
-  barberName: string;
-  serviceId: string;
-  serviceName: string;
-  date: string;
-  time: string;
-  status: 'pending' | 'confirmed' | 'accepted' | 'declined' | 'completed' | 'cancelled' | 'traveling' | 'arrived';
-  duration: number;
-  price: number;
-  bookingType?: string;
-  customerLocation?: string;
-  rating?: number | null;
-  review?: string | null;
+// ── Gold constants ───────────────────────────────────────────────────────────
+
+const GOLD = 'var(--ds-gold-primary)';
+const GOLD_BG_10 = 'rgba(176,132,66,0.10)';
+const GOLD_BG_12 = 'rgba(176,132,66,0.12)';
+const GOLD_SEP = 'rgba(176,132,66,0.08)';
+const GOLD_BORDER = 'rgba(176,132,66,0.18)';
+const GOLD_CARD_BG = 'rgba(176,132,66,0.06)';
+
+// ── Shared sub-components ────────────────────────────────────────────────────
+
+function IOSToggle({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={[
+        'relative inline-flex h-[31px] w-[51px] shrink-0 rounded-full',
+        'transition-colors duration-200 ease-in-out',
+        checked ? 'bg-[#B08442]' : 'bg-[#E5E5EA] dark:bg-[#3A3A3C]',
+      ].join(' ')}
+    >
+      <span
+        className={[
+          'absolute top-[2px] left-[2px]',
+          'h-[27px] w-[27px] rounded-full bg-white',
+          'shadow-[0_2px_6px_rgba(0,0,0,0.18),0_1px_2px_rgba(0,0,0,0.12)]',
+          'transition-transform duration-200 ease-in-out',
+          checked ? 'translate-x-[20px]' : 'translate-x-0',
+        ].join(' ')}
+      />
+    </span>
+  );
 }
+
+function SectionLabel({ label }: { label: string }) {
+  return (
+    <p className="text-xs font-semibold px-5 mb-2" style={{ color: GOLD }}>
+      {label}
+    </p>
+  );
+}
+
+function MenuCard({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className="mx-4 rounded-2xl overflow-hidden"
+      style={{ border: `1px solid ${GOLD_SEP}` }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function MenuRow({
+  icon,
+  label,
+  right,
+  onClick,
+  testId,
+}: {
+  icon: ReactNode;
+  label: string;
+  right?: ReactNode;
+  onClick?: () => void;
+  testId?: string;
+}) {
+  return (
+    <button
+      className="w-full flex items-center justify-between px-4 py-3.5 bg-card active:opacity-60 transition-opacity text-start"
+      onClick={onClick}
+      data-testid={testId}
+    >
+      <div className="flex items-center gap-3">
+        <span
+          className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: GOLD_BG_10 }}
+        >
+          {icon}
+        </span>
+        <span className="font-medium text-sm">{label}</span>
+      </div>
+      {right && <div className="shrink-0">{right}</div>}
+    </button>
+  );
+}
+
+function GoldSep() {
+  return <Separator style={{ backgroundColor: GOLD_SEP }} />;
+}
+
+// ── Main page ────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
   const [, navigate] = useLocation();
@@ -49,11 +124,14 @@ export default function ProfilePage() {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({
-    queryKey: ['/api/bookings'],
-    enabled: isAuthenticated,
-    refetchInterval: 30_000,
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    }
+    return 'light';
   });
+
+  const isArabic = i18n.language.startsWith('ar');
 
   useEffect(() => {
     document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
@@ -61,15 +139,19 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (searchString.includes('booked=true')) {
-      toast({
-        title: t('bookingConfirmed'),
-        description: t('appointmentBookedSuccess'),
-      });
+      toast({ title: t('bookingConfirmed'), description: t('appointmentBookedSuccess') });
     }
   }, [searchString, toast, t]);
 
-  const handleLogin = () => {
-    navigate('/login');
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next);
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', next);
+  };
+
+  const toggleLanguage = () => {
+    i18n.changeLanguage(isArabic ? 'en' : 'ar');
   };
 
   const handleLogout = async () => {
@@ -79,303 +161,275 @@ export default function ProfilePage() {
     navigate('/');
   };
 
-  const upcomingBookings = bookings.filter(
-    b => b.status === 'pending' || b.status === 'confirmed' || b.status === 'accepted' || b.status === 'traveling' || b.status === 'arrived'
-  );
-  const pastBookings = bookings.filter(
-    b => b.status === 'completed' || b.status === 'cancelled' || b.status === 'declined'
-  );
-
+  // ── Loading skeleton ─────────────────────────────────────────────────────
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background/80 backdrop-blur-sm">
-        <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
-          <h1 className="text-xl font-bold">{t('profile')}</h1>
-        </header>
-        <main className="px-4 py-6 space-y-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-16 w-16 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-4 w-24" />
-                </div>
+      <div className="min-h-screen pb-8">
+        <div className="px-5 pt-6 pb-4">
+          <div className="h-6 w-36 rounded-xl bg-muted animate-pulse" />
+        </div>
+        <div className="px-4">
+          <div
+            className="rounded-2xl p-4"
+            style={{ border: `1px solid ${GOLD_BORDER}`, background: GOLD_CARD_BG }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 rounded-full bg-muted animate-pulse shrink-0" />
+              <div className="space-y-2 flex-1">
+                <div className="h-4 w-32 rounded-lg bg-muted animate-pulse" />
+                <div className="h-3 w-24 rounded-lg bg-muted animate-pulse" />
               </div>
-            </CardContent>
-          </Card>
-        </main>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
+  // ── Sections shared between auth states ──────────────────────────────────
+  const chevron = <ChevronRight className="h-4 w-4 text-muted-foreground" />;
+  const gi = (icon: ReactNode) => (
+    <span style={{ color: GOLD }} className="flex">{icon}</span>
+  );
+
+  const prefsSection = (
+    <div className="space-y-2">
+      <SectionLabel label="التفضيلات" />
+      <MenuCard>
+        <MenuRow
+          icon={gi(theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />)}
+          label={t('darkMode')}
+          right={<IOSToggle checked={theme === 'dark'} />}
+          onClick={toggleTheme}
+          testId="button-theme"
+        />
+        <GoldSep />
+        <MenuRow
+          icon={gi(<Globe className="h-4 w-4" />)}
+          label="العربية"
+          right={<IOSToggle checked={isArabic} />}
+          onClick={toggleLanguage}
+          testId="button-language"
+        />
+      </MenuCard>
+    </div>
+  );
+
+  const infoSection = (showBarberItems: boolean) => (
+    <div className="space-y-2">
+      <SectionLabel label="معلومات ومساعدة" />
+      <MenuCard>
+        <MenuRow
+          icon={gi(<Headphones className="h-4 w-4" />)}
+          label="مركز الدعم"
+          right={chevron}
+          onClick={() => navigate('/support')}
+          testId="button-support"
+        />
+        <GoldSep />
+        <MenuRow
+          icon={gi(<Info className="h-4 w-4" />)}
+          label="عن التطبيق"
+          right={chevron}
+          onClick={() => navigate('/about')}
+          testId="button-about"
+        />
+        <GoldSep />
+        <MenuRow
+          icon={gi(<FileText className="h-4 w-4" />)}
+          label="الشروط والأحكام"
+          right={chevron}
+          onClick={() => navigate('/terms')}
+          testId="button-terms"
+        />
+        <GoldSep />
+        <MenuRow
+          icon={gi(<Shield className="h-4 w-4" />)}
+          label="سياسة الخصوصية"
+          right={chevron}
+          onClick={() => navigate('/privacy')}
+          testId="button-privacy"
+        />
+        {showBarberItems && (
+          <>
+            <GoldSep />
+            <MenuRow
+              icon={gi(<Tag className="h-4 w-4" />)}
+              label="طلب تغيير السعر"
+              right={chevron}
+              onClick={() => navigate('/price-change-request')}
+              testId="button-price-change"
+            />
+          </>
+        )}
+      </MenuCard>
+    </div>
+  );
+
+  // ── Unauthenticated ──────────────────────────────────────────────────────
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-background/80 backdrop-blur-sm">
-        <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
-          <h1 className="text-xl font-bold">{t('profile')}</h1>
-        </header>
+      <div className="min-h-screen pb-8 space-y-5">
+        <div className="px-5 pt-6 pb-1">
+          <h1 className="text-xl font-bold">الملف الشخصي</h1>
+        </div>
 
-        <main className="px-4 py-6 space-y-6">
-          <div className="text-center py-8">
-            <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-              <UserIcon className="h-10 w-10 text-muted-foreground" />
+        {/* Sign-in prompt */}
+        <div className="px-4">
+          <div
+            className="rounded-2xl p-6 text-center"
+            style={{ border: `1px solid ${GOLD_BORDER}`, background: GOLD_CARD_BG }}
+          >
+            <div
+              className="h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-3"
+              style={{ background: GOLD_BG_12 }}
+            >
+              <UserIcon className="h-8 w-8" style={{ color: GOLD }} />
             </div>
-            <h2 className="text-lg font-semibold mb-2">{t('signInToContinue')}</h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              {t('viewAppointments')}
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <Button 
-              className="w-full h-12" 
-              onClick={handleLogin}
+            <p className="font-bold mb-1">{t('signInToContinue')}</p>
+            <p className="text-sm text-muted-foreground mb-5">{t('viewAppointments')}</p>
+            <button
+              className="w-full h-11 rounded-xl font-bold text-sm text-white active:opacity-80 transition-opacity"
+              style={{ background: GOLD }}
+              onClick={() => navigate('/login')}
               data-testid="button-login"
             >
               {t('signIn')}
-            </Button>
+            </button>
           </div>
+        </div>
 
-          <div className="text-center pt-4">
-            <Button 
-              variant="ghost" 
-              className="text-muted-foreground"
-              onClick={() => navigate('/settings')}
-              data-testid="link-settings"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              {t('settings')}
-            </Button>
-          </div>
-        </main>
+        {prefsSection}
+        {infoSection(false)}
       </div>
     );
   }
 
+  // ── Authenticated ────────────────────────────────────────────────────────
   const userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || t('user');
+  const isBarber = user.role === 'barber';
+  const isCustomer = user.role === 'customer';
 
   return (
-    <div className="min-h-screen bg-background/80 backdrop-blur-sm">
-      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b px-4 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">{t('profile')}</h1>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate('/settings')}
-            data-testid="button-settings"
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
-        </div>
-      </header>
+    <div className="min-h-screen pb-8 space-y-5">
+      <div className="px-5 pt-6 pb-1">
+        <h1 className="text-xl font-bold">الملف الشخصي</h1>
+      </div>
 
-      <main className="px-4 py-6 space-y-6">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={user.profileImageUrl || ''} alt={userName} />
-                <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h2 className="font-semibold text-lg">{userName}</h2>
-                <p className="text-sm text-muted-foreground">{user.phone || user.email}</p>
-                {user.role === 'barber' && (
-                  <Badge variant="secondary" className="mt-1">
-                    <Scissors className="h-3 w-3 mr-1" />
-                    {t('barber')}
-                  </Badge>
-                )}
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => navigate('/profile/edit')}
-                data-testid="button-edit-profile"
+      {/* ── Profile card ─────────────────────────────────────────────────── */}
+      <div className="px-4">
+        <div
+          className="rounded-2xl p-4"
+          style={{ border: `1px solid ${GOLD_BORDER}`, background: GOLD_CARD_BG }}
+        >
+          <div className="flex items-center gap-4">
+            <Avatar
+              className="h-16 w-16 shrink-0"
+              style={{ border: '2px solid rgba(176,132,66,0.30)' }}
+            >
+              <AvatarImage src={user.profileImageUrl || ''} alt={userName} />
+              <AvatarFallback
+                style={{
+                  background: GOLD_BG_12,
+                  color: GOLD,
+                  fontWeight: 700,
+                  fontSize: '1.2rem',
+                }}
               >
-                <Edit className="h-5 w-5" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                {userName.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
 
-        {user.role === 'barber' && (
-          <Button 
-            className="w-full"
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-base leading-snug">{userName}</p>
+              <p className="text-sm text-muted-foreground mt-0.5 truncate">
+                {user.phone || user.email}
+              </p>
+              {isBarber && (
+                <span
+                  className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                  style={{ background: GOLD_BG_12, color: GOLD }}
+                >
+                  <Scissors className="h-3 w-3" />
+                  حلاق
+                </span>
+              )}
+            </div>
+
+            <button
+              className="p-2.5 rounded-xl shrink-0 active:opacity-60 transition-opacity"
+              style={{ background: GOLD_BG_10 }}
+              onClick={() => navigate('/profile/edit')}
+              data-testid="button-edit-profile"
+            >
+              <Edit className="h-4 w-4" style={{ color: GOLD }} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Role CTA ─────────────────────────────────────────────────────── */}
+      {isBarber && (
+        <div className="px-4">
+          <button
+            className="w-full h-12 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 active:opacity-80 transition-opacity"
+            style={{ background: GOLD }}
             onClick={() => navigate('/barber-dashboard')}
             data-testid="button-barber-dashboard"
           >
-            <Scissors className="h-4 w-4 mr-2" />
-            {t('barberDashboard')}
-          </Button>
-        )}
-
-        {user.role === 'customer' && (
-          <Button 
-            variant="outline"
-            className="w-full"
+            <Scissors className="h-4 w-4" />
+            لوحة الحلاق
+          </button>
+        </div>
+      )}
+      {isCustomer && (
+        <div className="px-4">
+          <button
+            className="w-full h-12 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:opacity-70 transition-opacity"
+            style={{ border: '1.5px solid rgba(176,132,66,0.40)', color: GOLD }}
             onClick={() => navigate('/barber-register')}
             data-testid="button-become-barber"
           >
-            <Scissors className="h-4 w-4 mr-2" />
-            {t('becomeBarber')}
-          </Button>
-        )}
+            <Scissors className="h-4 w-4" />
+            كن حلاقاً
+          </button>
+        </div>
+      )}
 
-        <section>
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            {t('upcomingAppointments')}
-          </h3>
-          {bookingsLoading ? (
-            <div className="space-y-3">
-              {[1, 2].map(i => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-2 flex-1">
-                        <Skeleton className="h-4 w-36" />
-                        <Skeleton className="h-3 w-28" />
-                        <Skeleton className="h-3 w-32" />
-                      </div>
-                      <div className="flex flex-col items-end space-y-2">
-                        <Skeleton className="h-5 w-20 rounded-full" />
-                        <Skeleton className="h-4 w-12" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : upcomingBookings.length > 0 ? (
-            <div className="space-y-3">
-              {upcomingBookings.map((booking) => (
-                <BookingCard key={booking.id} booking={booking} />
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="py-6 text-center text-muted-foreground">
-                {t('noUpcoming')}
-              </CardContent>
-            </Card>
-          )}
-        </section>
+      {/* ── Preferences ──────────────────────────────────────────────────── */}
+      {prefsSection}
 
-        <section>
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            {t('pastAppointments')}
-          </h3>
-          {bookingsLoading ? (
-            <div className="space-y-3">
-              {[1, 2].map(i => (
-                <Card key={i} className="opacity-70">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-2 flex-1">
-                        <Skeleton className="h-4 w-36" />
-                        <Skeleton className="h-3 w-28" />
-                        <Skeleton className="h-3 w-32" />
-                      </div>
-                      <div className="flex flex-col items-end space-y-2">
-                        <Skeleton className="h-5 w-20 rounded-full" />
-                        <Skeleton className="h-4 w-12" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : pastBookings.length > 0 ? (
-            <div className="space-y-3">
-              {pastBookings.map((booking) => (
-                <BookingCard key={booking.id} booking={booking} isPast />
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="py-6 text-center text-muted-foreground">
-                {t('noPast')}
-              </CardContent>
-            </Card>
-          )}
-        </section>
+      {/* ── Info & Help ──────────────────────────────────────────────────── */}
+      {infoSection(isBarber)}
 
-        <Button 
-          variant="outline" 
-          className="w-full"
+      {/* ── Barber price notice ──────────────────────────────────────────── */}
+      {isBarber && (
+        <div className="px-4">
+          <div
+            className="rounded-2xl px-4 py-3 flex items-center gap-3"
+            style={{ background: GOLD_CARD_BG, border: `1px solid ${GOLD_BG_12}` }}
+          >
+            <Lock className="h-4 w-4 shrink-0" style={{ color: GOLD }} />
+            <p className="text-sm text-muted-foreground">{t('pricesSetByAdmin')}</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Sign out ─────────────────────────────────────────────────────── */}
+      <div className="px-4">
+        <button
+          className="w-full h-12 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:opacity-70 transition-opacity"
+          style={{ border: '1.5px solid rgba(220,38,38,0.35)', color: 'rgb(220,38,38)' }}
           onClick={handleLogout}
           data-testid="button-logout"
         >
-          {t('signOut')}
-        </Button>
-      </main>
+          <LogOut className="h-4 w-4" />
+          تسجيل الخروج
+        </button>
+      </div>
+
+      {/* ── Version ──────────────────────────────────────────────────────── */}
+      <p className="text-center text-xs text-muted-foreground pb-2">{t('version')}</p>
     </div>
-  );
-}
-
-function BookingCard({ booking, isPast }: { booking: Booking; isPast?: boolean }) {
-  const { t } = useTranslation();
-  const isHomeService = booking.bookingType === 'home';
-
-  const statusClass = (() => {
-    switch (booking.status) {
-      case 'confirmed': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      case 'completed': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-      case 'traveling': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
-      case 'arrived': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400';
-      default: return '';
-    }
-  })();
-
-  return (
-    <Card className={isPast ? 'opacity-70' : ''}>
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="font-medium">{booking.serviceName}</p>
-              {isHomeService && (
-                <Badge variant="outline" className="text-xs px-1.5 py-0">
-                  <Navigation className="h-3 w-3 mr-1" />
-                  {t('homeService')}
-                </Badge>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">{t('with')} {booking.barberName}</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {format(parseISO(booking.date), 'EEE, MMM d')} {t('at')} {booking.time}
-            </p>
-          </div>
-          <div className="text-right">
-            <Badge variant="secondary" className={statusClass}>
-              {(booking.status === 'confirmed' || booking.status === 'arrived') && (
-                <CheckCircle className="h-3 w-3 mr-1" />
-              )}
-              {booking.status === 'traveling' && <Navigation className="h-3 w-3 mr-1" />}
-              {t(booking.status)}
-            </Badge>
-            <p className="text-sm font-medium mt-2">{booking.price} {t('price')}</p>
-          </div>
-        </div>
-
-        {/* Home service status alerts */}
-        {booking.status === 'traveling' && isHomeService && (
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/10 text-amber-800 dark:text-amber-400 text-sm">
-            <Navigation className="h-4 w-4 shrink-0" />
-            <span>{t('barberOnTheWay')}</span>
-          </div>
-        )}
-        {booking.status === 'arrived' && isHomeService && (
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 text-emerald-800 dark:text-emerald-400 text-sm font-medium">
-            <MapPin className="h-4 w-4 shrink-0" />
-            <span>{t('barberArrived')}</span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
   );
 }
